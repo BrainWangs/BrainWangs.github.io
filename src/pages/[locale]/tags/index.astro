@@ -1,0 +1,46 @@
+---
+import { getCollection } from "astro:content";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Main from "@/components/Main.astro";
+import Footer from "@/components/Footer.astro";
+import Tag from "@/components/Tag.astro";
+import { getUniqueTags } from "@/utils/getUniqueTags";
+import { getPostSlug } from "@/utils/getPostPaths";
+import { useTranslations } from "@/i18n";
+import { localePaths, getLocale } from "@/utils/locale";
+import config from "@/config";
+
+export { localePaths as getStaticPaths };
+
+const posts = await getCollection("posts", ({ data }) => !data.draft);
+
+// Deduplicate by slug so zh/en versions don't appear twice.
+const seen = new Set<string>();
+const dedupedPosts = posts.filter(p => {
+  const s = getPostSlug(p.id, p.filePath);
+  if (seen.has(s)) return false;
+  seen.add(s);
+  return true;
+});
+
+const tags = getUniqueTags(dedupedPosts);
+
+const locale = getLocale(Astro.params);
+const t = useTranslations(locale);
+---
+
+<Layout title={`${t.pages.tagsTitle} | ${config.site.title}`}>
+  <Header />
+
+  <Breadcrumb />
+
+  <Main pageTitle={t.pages.tagsTitle} pageDesc={t.pages.tagsDesc}>
+    <ul class="flex flex-wrap gap-6">
+      {tags.map(({ tag, tagName }) => <Tag {tag} {tagName} />)}
+    </ul>
+  </Main>
+
+  <Footer />
+</Layout>

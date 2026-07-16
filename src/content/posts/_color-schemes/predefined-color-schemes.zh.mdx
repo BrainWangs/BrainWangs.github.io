@@ -1,0 +1,235 @@
+---
+author: Sat Naing
+pubDatetime: 2022-09-26T12:13:24Z
+modDatetime: 2026-05-16T11:29:26.658Z
+title: 预定义配色方案
+slug: predefined-color-schemes
+featured: false
+draft: false
+tags:
+  - 颜色方案
+description:
+  AstroPaper 精心制作、持续更新的一系列预定义配色方案。
+
+---
+
+import ResponsiveTable from '@/components/ResponsiveTable.astro';
+
+AstroPaper 内置了一系列预定义配色方案，可用于自定义主题外观。每个方案都定义了一套完整的 CSS 自定义属性（变量），涵盖浅色和深色模式。
+
+## 目录
+
+## 快速开始
+
+要应用预定义配色方案，请将 CSS 变量定义复制到你的主题配置中。详细设置说明请参阅[配色方案配置指南](https://astro-paper.pages.dev/posts/customizing-astropaper-theme-color-schemes/)。
+
+## CSS 变量参考
+
+所有配色方案都使用以下 CSS 自定义属性：
+
+<ResponsiveTable variant="striped-minimal">
+
+| 变量                   | 用途                           |
+| ---------------------- | ------------------------------ |
+| `--background`         | 主背景色                       |
+| `--foreground`         | 主文本色                       |
+| `--accent`             | 强调/交互元素（链接、按钮、高亮） |
+| `--accent-foreground`  | 强调色背景上的文本颜色            |
+| `--muted`              | 次要区域的辅助背景色              |
+| `--muted-foreground`   | 次要内容的文本颜色               |
+| `--border`             | 边框和分隔线颜色                 |
+
+</ResponsiveTable>
+
+## 浅色方案
+
+浅色配色方案使用 CSS 选择器 `:root` 和 `[data-theme="light"]` 来定义。
+
+### Paper Light
+
+AstroPaper 默认浅色主题。
+
+![Paper Light](assets/paper-light.png)
+
+```css
+:root,
+[data-theme="light"] {
+  --background: #fdfdfd;
+  --foreground: #282728;
+  --accent: #006cac;
+  --accent-foreground: #ffffff;
+  --muted: #e6e6e6;
+  --muted-foreground: #6b7280;
+  --border: #ece9e9;
+}
+```
+
+### Kha-Yan
+
+以紫色为主的浅色方案，搭配暖色背景。
+
+![Kha-Yan](assets/kha-yan.png)
+
+```css
+:root,
+[data-theme="light"] {
+  --background: #fefaec;
+  --foreground: #120e01;
+  --accent: #6e10cf;
+  --accent-foreground: #fefaec;
+  --muted: #dcdcdc;
+  --muted-foreground: #6b7280;
+  --border: #cdc4d6;
+}
+```
+
+### Nila
+
+浅紫色方案，带有冷色调蓝色底调。
+
+![Nila](assets/nila.png)
+
+```css
+:root,
+[data-theme="light"] {
+  --background: #f6f6fb;
+  --foreground: #0c0c19;
+  --accent: #6760b4;
+  --accent-foreground: #f3f3f3;
+  --muted: #dddcea;
+  --muted-foreground: #54515b;
+  --border: #d8d6ec;
+}
+```
+
+### Jadeite
+
+以青色为强调色的浅色方案，搭配中性背景。
+
+![Jadeite](assets/jadeite.png)
+
+```css
+:root,
+[data-theme="light"] {
+  --background: #f6fcf7;
+  --foreground: #060b07;
+  --accent: #027c6d;
+  --accent-foreground: #ffffff;
+  --muted: #c9e4e2;
+  --muted-foreground: #6b7280;
+  --border: #d4e1df;
+}
+```
+
+### Pyit Tine Htaung
+
+红金双色强调方案，温暖色调。
+
+![Pyit Tine Htaung](assets/pyit-tine-htaung.png)
+
+```css
+:root,
+[data-theme="light"] {
+  --background: #fffaf6;
+  --foreground: #060503;
+  --accent: #aa0215;
+  --accent-foreground: #ffcf75;
+  --muted: #ffdc98;
+  --muted-foreground: #54515b;
+  --border: #ffdc98;
+}
+```
+
+## 深色方案
+
+深色配色方案使用 CSS 选择器 `[data-theme="dark"]` 来定义。
+
+### Paper Dark
+
+AstroPaper 原始深色主题，以青色作为强调色。
+
+![AstroPaper 1 default dark theme](https://user-images.githubusercontent.com/53733092/215769153-13b0ad8d-5ba2-44b1-af06-e5ae61293f62.png)
+
+```css
+[data-theme="dark"] {
+  --background: #2f3741;
+  --foreground: #e6e6e6;
+  --accent: #1ad9d9;
+  --accent-foreground: #0d2b2b;
+  --muted: #596b81;
+  --muted-foreground: #8faabb;
+  --border: #3b4655;
+}
+```
+
+### Paper Dark II
+
+当前默认深色主题，以橙色作为强调色。
+
+![new dark color scheme - low contrast](https://user-images.githubusercontent.com/53733092/215772856-d5b7ae35-ddaa-4ed6-b0bf-3fa5dbcf834c.png)
+
+```css
+[data-theme="dark"] {
+  --background: #212737;
+  --foreground: #eaedf3;
+  --accent: #ff6b01;
+  --accent-foreground: #ffffff;
+  --muted: #343f60;
+  --muted-foreground: #afb9ca;
+  --border: #ab4b08;
+}
+```
+
+### Deep Purple
+
+以鲜艳品红色为强调的深色方案。
+
+![AstroPaper v3 new theme](https://github.com/satnaing/astro-paper/assets/53733092/c8b5d7e1-a3bc-4852-a5ad-4abf7b3cec79)
+
+```css
+[data-theme="dark"] {
+  --background: #212737;
+  --foreground: #eaedf3;
+  --accent: #eb3fd3;
+  --accent-foreground: #1a0d1a;
+  --muted: #513f51;
+  --muted-foreground: #c09abc;
+  --border: #642451;
+}
+```
+
+### Ember
+
+温暖柔和的深色方案，以红色作为强调色。
+
+![Ember](assets/ember.png)
+
+```css
+[data-theme="dark"] {
+  --background: #1a1a1a;
+  --foreground: #f5efe4;
+  --accent: #ff3737;
+  --accent-foreground: #1a1a1a;
+  --muted: #38342f;
+  --muted-foreground: #a59a8c;
+  --border: #6f5648;
+}
+```
+
+### Espresso
+
+以棕色为主的温暖深色方案。
+
+![Coffee](assets/espresso.png)
+
+```css
+[data-theme="dark"] {
+  --background: #2f2f2f;
+  --foreground: #ebe5e1;
+  --accent: #ee781e;
+  --accent-foreground: #1a1a1a;
+  --muted: #4f4b44;
+  --muted-foreground: #ddbfa7;
+  --border: #6f5648;
+}
+```

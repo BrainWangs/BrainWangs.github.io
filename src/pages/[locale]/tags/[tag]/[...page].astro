@@ -1,0 +1,74 @@
+---
+import { getCollection } from "astro:content";
+import type { GetStaticPathsOptions } from "astro";
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import Main from "@/components/Main.astro";
+import Breadcrumb from "@/components/Breadcrumb.astro";
+import Card from "@/components/Card.astro";
+import Footer from "@/components/Footer.astro";
+import Pagination from "@/components/Pagination.astro";
+import { getUniqueTags } from "@/utils/getUniqueTags";
+import { getSortedPosts } from "@/utils/getSortedPosts";
+import { getPostSlug } from "@/utils/getPostPaths";
+import { slugifyAll } from "@/utils/slugify";
+import { useTranslations } from "@/i18n";
+import { LOCALES, getLocale } from "@/utils/locale";
+import config from "@/config";
+
+export async function getStaticPaths({ paginate }: GetStaticPathsOptions) {
+  const posts = await getCollection("posts", ({ data }) => !data.draft);
+
+  // Deduplicate by slug before computing tags.
+  const seen = new Set<string>();
+  const dedupedPosts = posts.filter(p => {
+    const s = getPostSlug(p.id, p.filePath);
+    if (seen.has(s)) return false;
+    seen.add(s);
+    return true;
+  });
+
+  const tags = getUniqueTags(dedupedPosts);
+
+  const results = await Promise.all(
+    tags.flatMap(({ tag, tagName }) => {
+      const tagPosts = getSortedPosts(
+        dedupedPosts.filter(({ data }) => slugifyAll(data.tags).includes(tag))
+      );
+
+      return LOCALES.map(locale =>
+        paginate(tagPosts, {
+          params: { locale, tag },
+          props: { tagName },
+          pageSize: config.posts.perPage,
+        })
+      );
+    })
+  );
+  return results.flat();
+}
+
+const { page, tagName } = Astro.props;
+
+const locale = getLocale(Astro.params);
+const t = useTranslations(locale);
+---
+
+<Layout title={`${t.pages.tagTitle}: ${tagName} | ${config.site.title}`}>
+  <Header />
+
+  <Breadcrumb />
+
+  <Main
+    pageTitle={`${t.pages.tagTitle}: ${tagName}`}
+    pageDesc={`${t.pages.tagDesc} "${tagName}".`}
+  >
+    <ul>
+      {page.data.map(data => <Card {...data} />)}
+    </ul>
+  </Main>
+
+  <Pagination {page} />
+
+  <Footer noMarginTop={page.lastPage > 1} />
+</Layout>

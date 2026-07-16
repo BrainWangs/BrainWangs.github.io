@@ -1,0 +1,305 @@
+---
+author: Sat Naing
+pubDatetime: 2022-09-23T04:58:53Z
+modDatetime: 2026-06-03T00:00:00.000Z
+title: 如何配置 AstroPaper 主题
+slug: how-to-configure-astropaper-theme
+featured: true
+draft: false
+tags:
+  - 配置
+  - 文档
+description: 如何将 AstroPaper 主题打造成你专属的样子。
+---
+import ResponsiveTable from '@/components/ResponsiveTable.astro';
+
+本指南涵盖 AstroPaper 中所有可用的配置选项——从站点元数据和功能开关，到字体、社交链接和布局设置。
+
+## 目录
+
+## 配置 astro-paper.config.ts
+
+所有站点级别的配置都位于项目根目录下的 `astro-paper.config.ts` 文件中。使用 `defineAstroPaperConfig()` 可以获得完整的 IntelliSense 支持：
+
+```ts file="astro-paper.config.ts"
+import { defineAstroPaperConfig } from "./src/types/config";
+
+export default defineAstroPaperConfig({
+  site: {
+    url: "https://your-site.com/", // 替换为你部署的 URL
+    title: "AstroPaper",
+    description: "一个极简、响应式且对 SEO 友好的 Astro 博客主题。",
+    author: "Sat Naing",
+    profile: "https://satnaing.dev",
+    ogImage: "default-og.jpg",
+    lang: "en",
+    timezone: "Asia/Bangkok",
+    dir: "ltr",
+  },
+  posts: {
+    perPage: 4,
+    perIndex: 4,
+    scheduledPostMargin: 15 * 60 * 1000, // 15 分钟
+  },
+  features: {
+    lightAndDarkMode: true,
+    dynamicOgImage: true,
+    showArchives: true,
+    showBackButton: true,
+    editPost: {
+      enabled: true,
+      url: "https://github.com/satnaing/astro-paper/edit/main/",
+    },
+    search: "pagefind",
+  },
+  socials: [
+    { name: "github", url: "https://github.com/satnaing/astro-paper" },
+    { name: "x", url: "https://x.com/username" },
+    { name: "linkedin", url: "https://www.linkedin.com/in/username/" },
+    { name: "mail", url: "mailto:yourmail@gmail.com" },
+  ],
+  shareLinks: [
+    { name: "whatsapp", url: "https://wa.me/?text=" },
+    { name: "facebook", url: "https://www.facebook.com/sharer.php?u=" },
+    { name: "x", url: "https://x.com/intent/post?url=" },
+    { name: "telegram", url: "https://t.me/share/url?url=" },
+    { name: "mail", url: "mailto:?subject=See%20this%20post&body=" },
+  ],
+});
+```
+
+### `site` 选项
+
+<ResponsiveTable>
+
+| 选项                   | 描述                                                                                                                                    |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `url`                  | 你部署的网站 URL。用于生成规范 URL、OG 图片 URL、RSS 订阅和站点地图。在生产环境中必须正确设置。                                          |
+| `title`                | 你的站点名称。                                                                                                                          |
+| `description`          | 你的站点描述。对 SEO 和社交媒体分享很有用。                                                                                             |
+| `author`               | 你的名字。用作默认的文章作者。                                                                                                          |
+| `profile`              | 你的个人/作品集网站 URL，用于结构化数据。如果没有，可设为 `undefined`。                                                                  |
+| `ogImage`              | `/public` 目录下的默认 OG 图片文件名（如 `"default-og.jpg"`）。当文章未设置专属 OG 图片且 `dynamicOgImage` 被禁用时使用。                |
+| `lang`                 | `<html lang="...">` 的 HTML ISO 语言代码。默认为 `"en"`。                                                                               |
+| `timezone`             | 文章日期的 IANA 时区（如 `"Asia/Bangkok"`）。确保 localhost 和部署站点的日期戳保持一致。                                                 |
+| `dir`                  | `<html dir="...">` 的文本方向。支持 `"ltr"` \| `"rtl"` \| `"auto"`。                                                                    |
+| `googleVerification`   | Google Search Console 验证元标记的值。可选。优先级高于 `PUBLIC_GOOGLE_SITE_VERIFICATION` 环境变量。                                      |
+
+</ResponsiveTable>
+
+### `posts` 选项
+
+<ResponsiveTable>
+
+| 选项                    | 描述                                                                                                     |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| `perPage`               | 分页列表页每页显示的文章数量。默认为 `4`。                                                                |
+| `perIndex`              | 首页"最近文章"区域显示的文章数量。默认为 `4`。                                                            |
+| `scheduledPostMargin`   | 未来 `pubDatetime` 在此时间窗口（毫秒）内的文章将被视为已发布。默认为 15 分钟（`15 * 60 * 1000`）。       |
+
+</ResponsiveTable>
+
+### `features` 选项
+
+<ResponsiveTable>
+
+| 选项                 | 描述                                                                                                                                                                                                                             |
+| -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lightAndDarkMode`   | 启用或禁用浅色/深色模式切换。默认为 `true`。                                                                                                                                                                                      |
+| `dynamicOgImage`     | 当文章 frontmatter 中未指定 `ogImage` 时，为每篇文章生成动态 OG 图片。默认为 `true`。详见[权衡说明](https://astro-paper.pages.dev/posts/dynamic-og-image-generation-in-astropaper-blog-posts/#trade-off)。                           |
+| `showArchives`       | 显示 `/archives` 页面及其导航链接。默认为 `true`。                                                                                                                                                                                |
+| `showBackButton`     | 在文章页面显示"返回"按钮。默认为 `true`。                                                                                                                                                                                         |
+| `editPost`           | 文章标题下方显示的"编辑页面"链接。设置 `enabled: true` 并提供仓库编辑 URL 的基础 `url`。可通过文章 frontmatter 中的 `hideEditPost` 针对单篇文章覆盖。                                                                              |
+| `search`             | 搜索提供者。默认为 `"pagefind"`。设为 `false` 可完全禁用搜索。                                                                                                                                                                    |
+
+</ResponsiveTable>
+
+## 调整布局宽度
+
+整个博客的默认 `max-width` 为 `768px`（`max-w-3xl`）。如果你想修改它，请更新 `src/styles/global.css` 中的 `max-w-app` 工具类：
+
+```css file="src/styles/global.css"
+@utility max-w-app {
+  /* [!code --:1] */
+  @apply max-w-3xl;
+  /* [!code ++:1] */
+  @apply max-w-4xl xl:max-w-5xl;
+}
+```
+
+你可以在 [Tailwind CSS 文档](https://tailwindcss.com/docs/max-width) 中查看更多 `max-width` 的可选值。
+
+## 配置 Logo 或标题
+
+![指向网站 Logo 的箭头](https://res.cloudinary.com/noezectz/v1663911318/astro-paper/AstroPaper-logo-config_goff5l.png)
+
+你有以下 3 种方案可选：
+
+### 方案一：站点标题文字
+
+这是最简单的方案。在 `astro-paper.config.ts` 中更新 `site.title` 即可。
+
+### 方案二：Astro 的 SVG 组件
+
+如果你想使用 SVG Logo，可以选择此方案。
+
+- 首先在 `src/assets/` 目录中添加一个 SVG 文件（例如 `src/assets/dummy-logo.svg`）。
+- 然后在 `Header.astro` 中导入该 SVG：
+
+  ```astro file="src/components/Header.astro"
+  ---
+  // ...
+  import DummyLogo from "@/assets/dummy-logo.svg";
+  ---
+  ```
+
+- 最后，用导入的 Logo 替换 `{config.site.title}`：
+
+  ```html
+  <a
+    href="/"
+    class="absolute py-1 text-left text-2xl leading-7 font-semibold whitespace-nowrap sm:static"
+  >
+    <DummyLogo class="scale-75 dark:invert" />
+    <!-- {config.site.title} -->
+  </a>
+  ```
+
+这种方案的最大优势在于你可以根据需要自定义 SVG 样式。在上面的示例中，你可以看到 SVG Logo 的颜色如何在深色模式下被反转。
+
+### 方案三：Astro 的 Image 组件
+
+如果你的 Logo 是图片但不是 SVG 格式，可以使用 Astro 的 Image 组件。
+
+- 将你的 Logo 放入 `src/assets/` 目录中（例如 `src/assets/dummy-logo.png`）。
+- 在 `Header.astro` 中导入 `Image` 和你的 Logo：
+
+  ```astro file="src/components/Header.astro"
+  ---
+  // ...
+  import { Image } from "astro:assets";
+  import dummyLogo from "@/assets/dummy-logo.png";
+  ---
+  ```
+
+- 然后，用导入的 Logo 替换 `{config.site.title}`：
+
+  ```html
+  <a
+    href="/"
+    class="absolute py-1 text-left text-2xl leading-7 font-semibold whitespace-nowrap sm:static"
+  >
+    <image src="{dummyLogo}" alt="My Blog" class="dark:invert" />
+    <!-- {config.site.title} -->
+  </a>
+  ```
+
+使用这种方案，你仍然可以通过 CSS 类来调整图片的外观。不过，这不一定总能满足你的需求。如果你需要根据浅色或深色模式显示不同的 Logo 图片，请查看 `Header.astro` 组件中如何处理浅色/深色图标。
+
+## 配置社交链接
+
+![指向社交链接图标的箭头](https://github.com/user-attachments/assets/8b895400-d088-442f-881b-02d2443e00cf)
+
+社交链接在 `astro-paper.config.ts` 中的 `socials` 数组中配置。每个条目需要一个与 `src/assets/icons/socials/` 目录下 SVG 文件名匹配的 `name` 和一个 `url`：
+
+```ts file="astro-paper.config.ts"
+export default defineAstroPaperConfig({
+  // ...
+  socials: [
+    { name: "github", url: "https://github.com/satnaing/astro-paper" },
+    { name: "x", url: "https://x.com/username" },
+    { name: "linkedin", url: "https://www.linkedin.com/in/username/" },
+    { name: "mail", url: "mailto:yourmail@gmail.com" },
+  ],
+});
+```
+
+要添加默认列表中没有的社交平台，请将其 SVG 图标放入 `src/assets/icons/socials/` 目录，并在数组中新增一个条目。`name` 必须与 SVG 文件名（不含 `.svg` 扩展名）一致。
+
+## 配置分享链接
+
+![指向分享链接图标的箭头](https://github.com/user-attachments/assets/4f930b68-b625-45df-8c41-e076dd2b838e)
+
+分享链接在 `shareLinks` 数组中配置。每个条目需要一个 `name`（与 `src/assets/icons/socials/` 中的 SVG 文件名匹配）和一个基础 `url`，文章 URL 将被追加到该基础 URL 后面：
+
+```ts file="astro-paper.config.ts"
+export default defineAstroPaperConfig({
+  // ...
+  shareLinks: [
+    { name: "whatsapp", url: "https://wa.me/?text=" },
+    { name: "facebook", url: "https://www.facebook.com/sharer.php?u=" },
+    { name: "x", url: "https://x.com/intent/post?url=" },
+    { name: "telegram", url: "https://t.me/share/url?url=" },
+    { name: "mail", url: "mailto:?subject=See%20this%20post&body=" },
+  ],
+});
+```
+
+## 配置字体
+
+AstroPaper 使用 Astro 的[字体 API](https://docs.astro.build/en/guides/fonts/)，默认字体为 [Google Sans Code](https://fonts.google.com/specimen/Google+Sans+Code)。这能提供跨平台一致的排版体验，并自动进行字体优化，包括预加载和缓存。
+
+### 使用默认字体
+
+字体已自动在 `astro.config.ts` 中配置，并在 `Layout.astro` 中加载。无需额外设置即可使用默认的 Google Sans Code 字体。
+
+### 自定义字体
+
+要使用不同的字体，需要更新以下三个地方：
+
+1. **更新 `astro.config.ts` 中的字体配置：**
+
+```ts file="astro.config.ts"
+import { defineConfig, fontProviders } from "astro/config";
+
+export default defineConfig({
+  // ...
+  fonts: [
+    {
+      name: "Your Font Name", // [!code highlight]
+      cssVariable: "--font-your-font", // [!code highlight]
+      provider: fontProviders.google(),
+      fallbacks: ["monospace"],
+      weights: [300, 400, 500, 600, 700],
+      styles: ["normal", "italic"],
+    },
+  ],
+});
+```
+
+2. **更新 `Layout.astro` 中的 Font 组件：**
+
+```astro file="src/layouts/Layout.astro"
+---
+import { Font } from "astro:assets";
+// ...
+---
+
+<head>
+  <!-- ... -->
+  <Font
+    cssVariable="--font-your-font"
+    preload={[{ subset: "latin", weight: 400, style: "normal" }]}
+  />
+  <!-- ... -->
+</head>
+```
+
+3. **更新 `src/styles/theme.css` 中的 CSS 变量映射：**
+
+```css file="src/styles/theme.css"
+@theme inline {
+  --font-app: var(--font-your-font); /* [!code highlight] */
+  /* ... */
+}
+```
+
+`--font-app` 变量通过 `font-app` Tailwind 工具类在整个主题中使用，因此只需更新这一个变量即可让自定义字体在全局生效。
+
+> [!WARNING]
+> 确保字体名称与 [Google Fonts](https://fonts.google.com) 上显示的名称完全一致。对于其他字体提供者或本地字体，请参考 [Astro 字体文档](https://docs.astro.build/en/guides/fonts/)。
+
+## 参见
+
+- [自定义 AstroPaper 主题配色方案](https://astro-paper.pages.dev/posts/customizing-astropaper-theme-color-schemes/)——通过 `src/styles/theme.css` 更改或新增配色方案。
+- [添加新文章](https://astro-paper.pages.dev/posts/adding-new-posts-in-astropaper-theme/)——frontmatter 参考和文件约定。

@@ -1,6 +1,7 @@
-import { getRelativeLocaleUrl } from "astro:i18n";
+import { localeUrl, type Locale } from "@/utils/locale";
 import { BLOG_PATH } from "@/content.config";
 import { slugifyStr } from "./slugify";
+import { stripPostLocale } from "./postLocale";
 import config from "@/config";
 
 function getPostPathSegments(filePath: string | undefined): string[] {
@@ -17,7 +18,9 @@ function getPostPathSegments(filePath: string | undefined): string[] {
 
 function getIdSlug(id: string): string {
   const postId = id.split("/");
-  return postId.length > 0 ? String(postId[postId.length - 1]) : id;
+  const rawSlug = postId.length > 0 ? String(postId[postId.length - 1]) : id;
+  // Strip locale suffix so my-post.zh and my-post.en share the same URL slug.
+  return stripPostLocale(rawSlug);
 }
 
 function getPostSlugPath(id: string, filePath: string | undefined): string {
@@ -39,8 +42,7 @@ export function getPostSlug(id: string, filePath: string | undefined): string {
 
 /**
  * Returns a fully navigable URL for use in `<a href>` and RSS links.
- * Applies both locale routing and the configured Astro base via
- * `getRelativeLocaleUrl`.
+ * Applies locale routing via `localeUrl`.
  * e.g. `/posts/my-post` or `/en/posts/my-post`
  */
 export function getPostUrl(
@@ -48,5 +50,8 @@ export function getPostUrl(
   filePath: string | undefined,
   locale: string | undefined = config.site.lang
 ): string {
-  return getRelativeLocaleUrl(locale, `posts/${getPostSlugPath(id, filePath)}`);
+  return localeUrl(
+    (locale ?? config.site.lang) as Locale,
+    `posts/${getPostSlugPath(id, filePath)}`
+  );
 }
