@@ -1,0 +1,202 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import config from "@/config";
+
+if (!import.meta.env.DEV) {
+  return new Response("Not found", { status: 404 });
+}
+---
+
+<Layout title={`New Post | Admin | ${config.site.title}`}>
+  <Header />
+  <main class="app-layout mt-8 pb-12">
+    <div class="mb-6 flex items-center gap-4">
+      <a
+        href="/admin"
+        class="text-muted-foreground hover:text-accent text-sm"
+      >
+        &larr; Dashboard
+      </a>
+      <h1 class="text-2xl font-semibold sm:text-3xl">New Post</h1>
+    </div>
+
+    <div class="mb-4">
+      <label class="mb-1 block text-sm font-medium">Slug</label>
+      <input
+        id="slug-input"
+        type="text"
+        placeholder="my-post-slug"
+        class="bg-background border-border rounded border p-2 w-full focus:outline-2 focus:outline-accent"
+      />
+    </div>
+
+    <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <!-- Chinese -->
+      <div class="border-border rounded border p-4">
+        <h2 class="mb-3 text-lg font-semibold">中文版 (zh)</h2>
+        <label class="mb-1 block text-sm">选择 .md 文件</label>
+        <input
+          id="zh-file"
+          type="file"
+          accept=".md,.mdx"
+          class="bg-background border-border rounded border p-2 w-full text-sm"
+        />
+        <div id="zh-preview" class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"></div>
+      </div>
+
+      <!-- English -->
+      <div class="border-border rounded border p-4">
+        <h2 class="mb-3 text-lg font-semibold">英文版 (en)</h2>
+        <label class="mb-1 block text-sm">选择 .md 文件</label>
+        <input
+          id="en-file"
+          type="file"
+          accept=".md,.mdx"
+          class="bg-background border-border rounded border p-2 w-full text-sm"
+        />
+        <div id="en-preview" class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"></div>
+      </div>
+    </div>
+
+    <div class="mt-6 flex gap-3">
+      <button
+        id="submit-btn"
+        class="bg-accent text-accent-foreground rounded px-6 py-2 hover:opacity-90 disabled:opacity-50"
+      >
+        Publish Post
+      </button>
+      <a
+        href="/admin"
+        class="bg-muted text-muted-foreground rounded px-6 py-2 hover:opacity-90"
+      >
+        Cancel
+      </a>
+    </div>
+    <p id="submit-msg" class="mt-3 text-sm"></p>
+  </main>
+</Layout>
+
+<script>
+  function suggestSlug(filename: string): string {
+    let name = filename.replace(/\.(md|mdx)$/, "");
+    name = name.replace(/\.(zh|en)$/, "");
+    return name;
+  }
+
+  function parseRaw(raw: string): { frontmatter: Record<string, unknown>; body: string } {
+    const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
+    if (!m) return { frontmatter: {}, body: raw };
+    const body = m[2];
+    const frontmatter: Record<string, unknown> = {};
+    let key = "";
+    for (const line of m[1].split("\n")) {
+      const kv = line.match(/^(\w[\w-]*):\s*(.*)/);
+      if (kv) {
+        key = kv[1];
+        const val = kv[2].trim();
+        frontmatter[key] = val || "";
+      } else if (key && line.startsWith("  - ")) {
+        const existing = frontmatter[key];
+        if (Array.isArray(existing)) {
+          existing.push(line.replace(/^\s*-\s*/, "").trim());
+        } else {
+          frontmatter[key] = [line.replace(/^\s*-\s*/, "").trim()];
+        }
+      }
+    }
+    return { frontmatter, body };
+  }
+
+  async function setupFilePreview(
+    fileInputId: string,
+    previewId: string
+  ): Promise<{
+    frontmatter: Record<string, unknown>;
+    content: string;
+  } | null> {
+    const input = document.getElementById(fileInputId) as HTMLInputElement;
+    const preview = document.getElementById(previewId)!;
+
+    return new Promise((resolve) => {
+      input.addEventListener("change", async () => {
+        const file = input.files?.[0];
+        if (!file) { resolve(null); return; }
+
+        // Auto-suggest slug from first file
+        const slugInput = document.getElementById(
+          "slug-input"
+        ) as HTMLInputElement;
+        const suggested = suggestSlug(file.name);
+        if (!slugInput.value || slugInput.value === suggestSlug(suggested)) {
+          slugInput.value = suggested;
+        }
+
+        const raw = await file.text();
+        const { frontmatter, body } = parseRaw(raw);
+        const { marked } = await import("marked");
+        preview.innerHTML = marked.parse(body) as string;
+        preview.classList.remove("hidden");
+
+        resolve({ frontmatter, content: body });
+      });
+    });
+  }
+
+  // Read files for upload
+  let zhData: { frontmatter: Record<string, unknown>; content: string } | null = null;
+  let enData: { frontmatter: Record<string, unknown>; content: string } | null = null;
+
+  setupFilePreview("zh-file", "zh-preview").then((d) => { zhData = d; });
+  setupFilePreview("en-file", "en-preview").then((d) => { enData = d; });
+
+  document.getElementById("submit-btn")!.addEventListener("click", async () => {
+    const slug = (document.getElementById("slug-input") as HTMLInputElement).value.trim();
+    if (!slug) {
+      document.getElementById("submit-msg")!.textContent = "Please enter a slug";
+      return;
+    }
+
+    const body: Record<string, unknown> = { slug };
+
+    if (zhData) {
+      const fm = zhData.frontmatter;
+      if (!fm.pubDatetime) fm.pubDatetime = new Date().toISOString();
+      if (!fm.title) fm.title = slug;
+      if (!fm.description) fm.description = "";
+      body.zh = { frontmatter: fm, content: zhData.content };
+    }
+    if (enData) {
+      const fm = enData.frontmatter;
+      if (!fm.pubDatetime) fm.pubDatetime = new Date().toISOString();
+      if (!fm.title) fm.title = slug;
+      if (!fm.description) fm.description = "";
+      body.en = { frontmatter: fm, content: enData.content };
+    }
+
+    if (!body.zh && !body.en) {
+      document.getElementById("submit-msg")!.textContent = "Please select at least one file";
+      return;
+    }
+
+    const msg = document.getElementById("submit-msg")!;
+    msg.textContent = "Publishing...";
+    const btn = document.getElementById("submit-btn")! as HTMLButtonElement;
+    btn.disabled = true;
+
+    const res = await fetch("/admin/api/posts", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    if (res.ok) {
+      msg.textContent = "Published! Redirecting...";
+      window.location.href = `/admin/edit/${slug}`;
+    } else {
+      msg.textContent = `Error: ${data.error}`;
+      btn.disabled = false;
+    }
+  });
+</script>

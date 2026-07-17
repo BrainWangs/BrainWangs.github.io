@@ -1,0 +1,97 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import config from "@/config";
+
+if (!import.meta.env.DEV) {
+  return new Response("Not found", { status: 404 });
+}
+---
+
+<Layout title={`Recycle Bin | Admin | ${config.site.title}`}>
+  <Header />
+  <main class="app-layout mt-8 pb-12">
+    <div class="mb-6 flex items-center gap-4">
+      <a href="/admin" class="text-muted-foreground hover:text-accent text-sm">&larr; Dashboard</a>
+      <h1 class="text-2xl font-semibold sm:text-3xl">Recycle Bin</h1>
+    </div>
+
+    <div id="loading" class="text-muted-foreground text-center py-8">Loading...</div>
+
+    <div id="table-container" class="hidden overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="border-border border-b">
+            <th class="p-2 text-left">Slug</th>
+            <th class="p-2 text-left">Original Path</th>
+            <th class="p-2 text-center">Locales</th>
+            <th class="p-2 text-left">Deleted At</th>
+            <th class="p-2 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recycle-table-body"></tbody>
+      </table>
+    </div>
+
+    <p id="empty-msg" class="text-muted-foreground mt-8 text-center hidden">Recycle bin is empty.</p>
+  </main>
+</Layout>
+
+<script>
+  async function load() {
+    const res = await fetch("/admin/api/recycle");
+    if (!res.ok) { document.getElementById("loading")!.textContent = "Error loading recycle bin."; return; }
+    const { data: entries } = await res.json();
+    document.getElementById("loading")!.classList.add("hidden");
+
+    if (!entries || entries.length === 0) {
+      document.getElementById("empty-msg")!.classList.remove("hidden");
+      return;
+    }
+
+    document.getElementById("table-container")!.classList.remove("hidden");
+    const tbody = document.getElementById("recycle-table-body")!;
+
+    entries.forEach((e: Record<string, unknown>) => {
+      const tr = document.createElement("tr");
+      tr.className = "border-border border-b hover:bg-muted/50";
+      tr.innerHTML = `
+        <td class="p-2 max-w-[200px] truncate font-mono text-xs">${e.slug}</td>
+        <td class="p-2 text-xs text-muted-foreground">${e.originalPath || "/"}</td>
+        <td class="p-2 text-center">
+          <div class="flex justify-center gap-1">
+            <span class="rounded px-1.5 py-0.5 text-xs ${e.zhExists ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground line-through"}">zh</span>
+            <span class="rounded px-1.5 py-0.5 text-xs ${e.enExists ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground line-through"}">en</span>
+          </div>
+        </td>
+        <td class="p-2 text-xs text-muted-foreground whitespace-nowrap">${new Date(e.deletedAt as string).toLocaleString()}</td>
+        <td class="p-2 text-right whitespace-nowrap">
+          <button class="restore-btn bg-accent text-accent-foreground rounded px-3 py-1 text-xs hover:opacity-90" data-slug="${e.slug}">Restore</button>
+          <button class="perm-delete-btn bg-red-600 text-white rounded px-3 py-1 text-xs hover:bg-red-700 ml-1" data-slug="${e.slug}">Delete Forever</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    document.querySelectorAll(".restore-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const slug = (btn as HTMLElement).dataset.slug!;
+        const res = await fetch(`/admin/api/recycle?slug=${slug}`, { method: "POST" });
+        if (res.ok) window.location.reload();
+        else alert(`Error: ${(await res.json()).error}`);
+      });
+    });
+
+    document.querySelectorAll(".perm-delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const slug = (btn as HTMLElement).dataset.slug!;
+        if (!confirm(`Permanently delete "${slug}"? This cannot be undone.`)) return;
+        const res = await fetch(`/admin/api/recycle?slug=${slug}`, { method: "DELETE" });
+        if (res.ok) window.location.reload();
+        else alert(`Error: ${(await res.json()).error}`);
+      });
+    });
+  }
+
+  load();
+</script>

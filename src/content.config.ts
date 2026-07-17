@@ -6,10 +6,18 @@ import config from "@/config";
 export const BLOG_PATH = "src/content/posts";
 
 const posts = defineCollection({
-  loader: glob({ pattern: "**/[^_]*.{md,mdx}", base: `./${BLOG_PATH}` }),
+  loader: glob({
+    pattern: "**/[^_]*.{md,mdx}",
+    base: `./${BLOG_PATH}`,
+    // Custom ID preserves the .en/.zh locale suffix from the filename.
+    // The default glob loader strips compound extensions like ".en.mdx",
+    // causing zh and en versions of the same post to share an ID.
+    generateId: ({ entry }) => entry.replace(/\.(md|mdx)$/, ""),
+  }),
   schema: ({ image }) =>
     z.object({
       author: z.string().default(config.site.author),
+      lang: z.enum(["zh", "en"]).optional(),
       pubDatetime: z.date(),
       modDatetime: z.date().optional().nullable(),
       title: z.string(),

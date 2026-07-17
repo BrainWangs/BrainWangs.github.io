@@ -1,8 +1,8 @@
 ---
+lang: zh
 title: 我是如何开发我的作品集网站和博客的
 author: Sat Naing
 pubDatetime: 2022-03-25T16:55:12.000+00:00
-slug: how-do-i-develop-my-portfolio-and-blog
 featured: false
 draft: false
 tags:

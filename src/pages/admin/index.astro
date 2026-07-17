@@ -1,0 +1,149 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import Header from "@/components/Header.astro";
+import config from "@/config";
+
+if (!import.meta.env.DEV) {
+  return new Response("Not found", { status: 404 });
+}
+---
+
+<Layout title={`Admin | ${config.site.title}`}>
+  <Header />
+  <main class="app-layout mt-8 pb-12">
+    <div class="mb-6 flex items-center justify-between">
+      <h1 class="text-2xl font-semibold sm:text-3xl">Admin Panel</h1>
+      <div class="flex gap-2">
+        <a href="/admin/new" class="bg-accent text-accent-foreground rounded px-4 py-2 text-sm hover:opacity-90">+ New Post</a>
+        <a href="/admin/recycle" class="bg-muted text-muted-foreground rounded px-4 py-2 text-sm hover:opacity-90">Recycle Bin</a>
+      </div>
+    </div>
+
+    <div id="loading" class="text-muted-foreground text-center py-8">Loading posts...</div>
+
+    <div id="table-container" class="hidden overflow-x-auto">
+      <table class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="border-border border-b">
+            <th class="p-2 text-left">Slug</th>
+            <th class="p-2 text-left">Title</th>
+            <th class="p-2 text-left">Date</th>
+            <th class="p-2 text-center">Locales</th>
+            <th class="p-2 text-right">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="post-table-body"></tbody>
+      </table>
+    </div>
+
+    <p id="empty-msg" class="text-muted-foreground mt-8 text-center hidden">
+      No posts yet. <a href="/admin/new" class="text-accent underline">Create your first post</a>
+    </p>
+  </main>
+</Layout>
+
+<script>
+  async function loadPosts() {
+    const res = await fetch("/admin/api/list-posts");
+    if (!res.ok) {
+      document.getElementById("loading")!.textContent = "Error loading posts.";
+      return;
+    }
+    const { data: posts } = await res.json();
+    document.getElementById("loading")!.classList.add("hidden");
+
+    if (!posts || posts.length === 0) {
+      document.getElementById("empty-msg")!.classList.remove("hidden");
+      return;
+    }
+
+    document.getElementById("table-container")!.classList.remove("hidden");
+    const tbody = document.getElementById("post-table-body")!;
+
+    posts.forEach((post: Record<string, unknown>) => {
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-post-slug", post.slug as string);
+      tr.setAttribute("data-post-row", "");
+      tr.draggable = true;
+      tr.className = "border-border border-b hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing";
+
+      const title = (post.zhFrontmatter as Record<string, unknown>)?.title ||
+        (post.enFrontmatter as Record<string, unknown>)?.title || "—";
+      const date = (post.zhFrontmatter as Record<string, unknown>)?.pubDatetime ||
+        (post.enFrontmatter as Record<string, unknown>)?.pubDatetime || "—";
+
+      tr.innerHTML = `
+        <td class="p-2 max-w-[200px] truncate font-mono text-xs">${post.slug}</td>
+        <td class="p-2">${title}</td>
+        <td class="p-2 text-xs text-muted-foreground whitespace-nowrap">${date}</td>
+        <td class="p-2 text-center">
+          <div class="flex justify-center gap-1">
+            <span class="rounded px-1.5 py-0.5 text-xs ${post.zh ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground line-through"}">zh</span>
+            <span class="rounded px-1.5 py-0.5 text-xs ${post.en ? "bg-accent text-accent-foreground" : "bg-muted text-muted-foreground line-through"}">en</span>
+          </div>
+        </td>
+        <td class="p-2 text-right whitespace-nowrap">
+          <a href="/admin/edit?slug=${post.slug}" class="bg-muted text-muted-foreground rounded px-3 py-1 text-xs hover:opacity-90">Edit</a>
+          <button class="delete-btn bg-red-600 text-white rounded px-3 py-1 text-xs hover:bg-red-700 ml-1" data-slug="${post.slug}">Delete</button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    attachDeleteHandlers();
+    attachDragDrop();
+  }
+
+  function attachDeleteHandlers() {
+    document.querySelectorAll(".delete-btn").forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const slug = (btn as HTMLElement).dataset.slug!;
+        if (!confirm(`Delete "${slug}"? This will delete BOTH Chinese and English versions.`)) return;
+        const res = await fetch(`/admin/api/post?slug=${slug}`, { method: "DELETE" });
+        if (res.ok) window.location.reload();
+        else alert(`Error: ${(await res.json()).error}`);
+      });
+    });
+  }
+
+  function attachDragDrop() {
+    let dragSource: HTMLElement | null = null;
+
+    document.querySelectorAll<HTMLElement>("[data-post-row]").forEach((row) => {
+      row.addEventListener("dragstart", (e) => {
+        dragSource = row;
+        row.classList.add("opacity-50");
+        e.dataTransfer!.effectAllowed = "move";
+      });
+      row.addEventListener("dragend", () => {
+        row.classList.remove("opacity-50");
+        document.querySelectorAll("[data-post-row]").forEach((r) => r.classList.remove("border-t-2", "border-accent"));
+        dragSource = null;
+      });
+      row.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        e.dataTransfer!.dropEffect = "move";
+        row.classList.add("border-t-2", "border-accent");
+      });
+      row.addEventListener("dragleave", () => row.classList.remove("border-t-2", "border-accent"));
+      row.addEventListener("drop", async (e) => {
+        e.preventDefault();
+        row.classList.remove("border-t-2", "border-accent");
+        if (!dragSource || dragSource === row) return;
+        const parent = row.parentNode!;
+        parent.insertBefore(dragSource, row);
+        const newOrder = [...parent.querySelectorAll<HTMLElement>("[data-post-row]")].map((r) => r.dataset.postSlug!);
+        const res = await fetch("/admin/api/reorder", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ slugs: newOrder }),
+        });
+        if (res.ok) window.location.reload();
+        else alert(`Reorder error: ${(await res.json()).error}`);
+      });
+    });
+  }
+
+  document.addEventListener("astro:after-swap", loadPosts);
+  loadPosts();
+</script>

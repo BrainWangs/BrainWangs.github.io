@@ -29,7 +29,9 @@ const pathWithoutTrailingSlash =
 const currentPath = stripLocale(pathWithoutTrailingSlash, locale);
 
 const targetLocale = otherLocale(locale);
-const targetHref = localeUrl(targetLocale, currentPath || "");
+// Admin pages are outside [locale] routing — language switch goes to homepage.
+const isAdmin = currentPath.startsWith("/admin");
+const targetHref = isAdmin ? localeUrl(targetLocale) : localeUrl(targetLocale, currentPath || "");
 
 const isActive = (path: string) => {
   const currentPathArray = currentPath.split("/").filter(p => p.trim());

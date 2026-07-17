@@ -1,34 +1,29 @@
 import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
 import { getSortedPosts } from "@/utils/getSortedPosts";
-import { getPostSlug, getPostUrl } from "@/utils/getPostPaths";
-import { localePaths } from "@/utils/locale";
+import { filterPostsByLocale } from "@/utils/postLocale";
+import { getPostUrl } from "@/utils/getPostPaths";
+import { localePaths, getLocale } from "@/utils/locale";
+import type { APIRoute } from "astro";
 import config from "@/config";
 
 export { localePaths as getStaticPaths };
 
-export async function GET() {
+export const GET: APIRoute = async ({ params }) => {
+  const locale = getLocale(params);
   const posts = await getCollection("posts");
-  const sortedPosts = getSortedPosts(posts);
-
-  // Deduplicate by slug so zh/en versions don't appear twice in the feed.
-  const seen = new Set<string>();
-  const deduped = sortedPosts.filter(p => {
-    const slug = getPostSlug(p.id, p.filePath);
-    if (seen.has(slug)) return false;
-    seen.add(slug);
-    return true;
-  });
+  const localePosts = filterPostsByLocale(posts, locale);
+  const sortedPosts = getSortedPosts(localePosts);
 
   return rss({
     title: config.site.title,
     description: config.site.description,
     site: config.site.url,
-    items: deduped.map(({ data, id, filePath }) => ({
-      link: getPostUrl(id, filePath, config.site.lang),
+    items: sortedPosts.map(({ data, id, filePath }) => ({
+      link: getPostUrl(id, filePath, locale),
       title: data.title,
       description: data.description,
       pubDate: new Date(data.modDatetime ?? data.pubDatetime),
     })),
   });
-}
+};

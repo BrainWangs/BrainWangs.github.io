@@ -9,30 +9,20 @@ import Card from "@/components/Card.astro";
 import Footer from "@/components/Footer.astro";
 import Pagination from "@/components/Pagination.astro";
 import { getSortedPosts } from "@/utils/getSortedPosts";
-import { getPostSlug } from "@/utils/getPostPaths";
+import { filterPostsByLocale } from "@/utils/postLocale";
 import { useTranslations } from "@/i18n";
 import { LOCALES, getLocale } from "@/utils/locale";
 import config from "@/config";
 
 export const getStaticPaths = (async ({ paginate }) => {
   const posts = await getCollection("posts", ({ data }) => !data.draft);
-  const sortedPosts = getSortedPosts(posts);
 
-  // Deduplicate by slug: zh/en versions of the same post share one listing entry.
-  const seen = new Set<string>();
-  const deduped = sortedPosts.filter(p => {
-    const slug = getPostSlug(p.id, p.filePath);
-    if (seen.has(slug)) return false;
-    seen.add(slug);
-    return true;
+  return LOCALES.flatMap(locale => {
+    const localePosts = filterPostsByLocale(posts, locale);
+    const sortedPosts = getSortedPosts(localePosts);
+
+    return paginate(sortedPosts, { params: { locale }, pageSize: config.posts.perPage });
   });
-
-  const results = await Promise.all(
-    LOCALES.map(locale =>
-      paginate(deduped, { params: { locale }, pageSize: config.posts.perPage })
-    )
-  );
-  return results.flat();
 }) satisfies GetStaticPaths;
 
 const { page } = Astro.props;

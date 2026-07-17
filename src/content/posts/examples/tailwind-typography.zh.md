@@ -1,4 +1,5 @@
 ---
+lang: zh
 title: Tailwind Typography 插件
 author: Sat Naing
 pubDatetime: 2022-07-05T02:05:51Z

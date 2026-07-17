@@ -32,6 +32,7 @@ export default {
     featured: "精选文章",
     recentPosts: "最近文章",
     allPosts: "全部文章",
+    description: "AstroPaper 是一个极简、响应式、可访问且 SEO 友好的 Astro 博客主题。本主题遵循最佳实践，开箱即提供无障碍支持。默认支持亮色和暗色模式，同时也可以配置更多配色方案。",
   },
   footer: {
     copyright: "版权所有",

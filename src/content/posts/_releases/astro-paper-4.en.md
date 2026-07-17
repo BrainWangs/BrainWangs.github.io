@@ -1,8 +1,8 @@
 ---
+lang: en
 author: Sat Naing
 pubDatetime: 2024-01-04T09:30:41.816Z
 title: AstroPaper 4.0
-slug: "astro-paper-v4"
 featured: false
 ogImage: ../../../assets/images/AstroPaper-v4.png
 tags:
@@ -35,7 +35,6 @@ The `postSlug` in the blog content schema is no longer available in AstroPaper v
 author: Sat Naing
 pubDatetime: 2024-01-01T04:35:33.428Z
 title: AstroPaper 4.0
-slug: "astro-paper-v4" # if slug is not specified, it will be 'astro-paper-4' (file name).
 # slug: "" ❌ cannot be an empty string
 ---
 ```

@@ -2,10 +2,12 @@ import type { CollectionEntry } from "astro:content";
 import { postFilter } from "./postFilter";
 
 /**
- * Returns posts that are eligible to be shown to users, sorted by “last updated”
+ * Returns posts that are eligible to be shown to users, sorted by "last updated"
  * descending (uses `modDatetime` when present, otherwise `pubDatetime`).
  *
  * Note: filtering respects drafts and scheduled posts via `postFilter()`.
+ * When `locale` is provided, only posts matching that locale (including
+ * unsuffixed default-locale posts) are included.
  */
 export function getSortedPosts(posts: CollectionEntry<"posts">[]) {
   return posts

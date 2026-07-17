@@ -64,14 +64,12 @@ export async function getStaticPaths() {
   );
 }
 
-type AdjacentEntry = { slug: string; title: string } | null;
-
 const { versions, prevEntry, nextEntry } = Astro.props;
 const locale = getLocale(Astro.params);
 
-// Pick the locale-specific post, fallback to zh then en.
-const post =
-  versions[locale as "zh" | "en"] ?? versions.zh ?? versions.en;
+// Strict locale matching: only show the post in the requested language.
+// No fallback — /en/ URLs only show English content, /zh/ only Chinese.
+const post = versions[locale as "zh" | "en"];
 if (!post) {
   return new Response(null, { status: 404, statusText: "Not found" });
 }

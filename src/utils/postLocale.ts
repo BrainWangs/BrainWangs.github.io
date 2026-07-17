@@ -46,3 +46,32 @@ export function stripPostLocale(id: string): string {
 export function getMatchedPostId(id: string, targetLocale: PostLocale): string {
   return stripPostLocale(id) + "." + targetLocale;
 }
+
+/**
+ * Filter an array of collection entries to only include those matching the given locale.
+ * Locale is determined from:
+ *   1. The `lang` field in entry.data (when present — single source of truth)
+ *   2. Fallback to file-name suffix (.zh or .en in the entry ID)
+ *   3. Final fallback to POST_DEFAULT_LOCALE ("zh")
+ *
+ * Usage:
+ *   const posts = await getCollection("posts");
+ *   const zhPosts = filterPostsByLocale(posts, "zh");
+ */
+export function filterPostsByLocale<T extends { id: string; data?: { lang?: string | null } }>(
+  entries: T[],
+  locale: string
+): T[] {
+  return entries.filter(entry => {
+    // 1. Check data.lang first (most reliable, explicitly set in frontmatter)
+    if (entry.data?.lang) {
+      return entry.data.lang === locale;
+    }
+    // 2. Fallback to filename suffix
+    const entryLocale = getPostLocale(entry.id) ?? POST_DEFAULT_LOCALE;
+    return entryLocale === locale;
+  });
+}
+
+/** Fallback locale when the filename has no locale suffix. */
+export const POST_DEFAULT_LOCALE: PostLocale = "zh";
