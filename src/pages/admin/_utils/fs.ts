@@ -7,8 +7,11 @@ const EXTENSIONS = [".md", ".mdx"] as const;
 // Lazily load Node.js modules — only available in dev mode.
 let _fs: typeof import("node:fs/promises") | null = null;
 let _path: typeof import("node:path") | null = null;
-let _parse: ((raw: string) => { frontmatter: PostFrontmatter; content: string }) | null = null;
-let _serialize: ((fm: PostFrontmatter, content: string) => string) | null = null;
+let _parse:
+  ((raw: string) => { frontmatter: PostFrontmatter; content: string }) | null =
+  null;
+let _serialize: ((fm: PostFrontmatter, content: string) => string) | null =
+  null;
 
 async function ensureFS() {
   if (!_fs) {
@@ -91,11 +94,17 @@ export async function listAllPosts(): Promise<PostPair[]> {
         const filePath = rel;
         if (locale === "zh") {
           pair.zh = filePath;
-          const raw = await fs.readFile(await resolvePostPath(filePath), "utf-8");
+          const raw = await fs.readFile(
+            await resolvePostPath(filePath),
+            "utf-8"
+          );
           pair.zhFrontmatter = parse(raw).frontmatter;
         } else if (locale === "en") {
           pair.en = filePath;
-          const raw = await fs.readFile(await resolvePostPath(filePath), "utf-8");
+          const raw = await fs.readFile(
+            await resolvePostPath(filePath),
+            "utf-8"
+          );
           pair.enFrontmatter = parse(raw).frontmatter;
         }
       }

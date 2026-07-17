@@ -41,7 +41,9 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     return Response.json(
-      { success: true, data: { slug: body.slug } } satisfies ApiResponse<{ slug: string }>,
+      { success: true, data: { slug: body.slug } } satisfies ApiResponse<{
+        slug: string;
+      }>,
       { status: 201 }
     );
   } catch (err) {

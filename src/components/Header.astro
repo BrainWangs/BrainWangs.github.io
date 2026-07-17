@@ -31,7 +31,9 @@ const currentPath = stripLocale(pathWithoutTrailingSlash, locale);
 const targetLocale = otherLocale(locale);
 // Admin pages are outside [locale] routing — language switch goes to homepage.
 const isAdmin = currentPath.startsWith("/admin");
-const targetHref = isAdmin ? localeUrl(targetLocale) : localeUrl(targetLocale, currentPath || "");
+const targetHref = isAdmin
+  ? localeUrl(targetLocale)
+  : localeUrl(targetLocale, currentPath || "");
 
 const isActive = (path: string) => {
   const currentPathArray = currentPath.split("/").filter(p => p.trim());
@@ -154,9 +156,13 @@ const isActive = (path: string) => {
             href={targetHref}
             class:list={["focus-outline relative size-8"]}
             title={targetLocale === "zh" ? "切换到中文" : "Switch to English"}
-            aria-label={targetLocale === "zh" ? "切换到中文" : "Switch to English"}
+            aria-label={targetLocale === "zh"
+              ? "切换到中文"
+              : "Switch to English"}
           >
-            <IconTranslation class="absolute top-1/2 left-1/2 size-6 -translate-x-1/2 -translate-y-1/2" />
+            <IconTranslation
+              class="absolute top-1/2 left-1/2 size-6 -translate-x-1/2 -translate-y-1/2"
+            />
           </LinkButton>
         </li>
         {

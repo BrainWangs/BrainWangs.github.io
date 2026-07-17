@@ -2,21 +2,26 @@
 // Root redirect: detect browser language and redirect to /zh/ or /en/.
 // Uses client-side detection since GitHub Pages is static hosting.
 ---
+
 <!doctype html>
 <html lang="zh">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Redirecting…</title>
-  <script is:inline>
-    (function () {
-      const lang = (navigator.languages || [navigator.language])[0]?.toLowerCase();
-      const locale = lang?.startsWith("zh") ? "zh" : "en";
-      window.location.replace("/" + locale + "/" + window.location.search + window.location.hash);
-    })();
-  </script>
-</head>
-<body>
-  <p>Redirecting…</p>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redirecting…</title>
+    <script is:inline>
+      (function () {
+        const lang = (navigator.languages || [
+          navigator.language,
+        ])[0]?.toLowerCase();
+        const locale = lang?.startsWith("zh") ? "zh" : "en";
+        window.location.replace(
+          "/" + locale + "/" + window.location.search + window.location.hash
+        );
+      })();
+    </script>
+  </head>
+  <body>
+    <p>Redirecting…</p>
+  </body>
 </html>

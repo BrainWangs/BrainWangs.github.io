@@ -21,7 +21,10 @@ export const getStaticPaths = (async ({ paginate }) => {
     const localePosts = filterPostsByLocale(posts, locale);
     const sortedPosts = getSortedPosts(localePosts);
 
-    return paginate(sortedPosts, { params: { locale }, pageSize: config.posts.perPage });
+    return paginate(sortedPosts, {
+      params: { locale },
+      pageSize: config.posts.perPage,
+    });
   });
 }) satisfies GetStaticPaths;
 

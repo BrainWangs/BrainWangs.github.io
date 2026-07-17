@@ -12,10 +12,7 @@ if (!import.meta.env.DEV) {
   <Header />
   <main class="app-layout mt-8 pb-12">
     <div class="mb-6 flex items-center gap-4">
-      <a
-        href="/admin"
-        class="text-muted-foreground hover:text-accent text-sm"
-      >
+      <a href="/admin" class="text-muted-foreground hover:text-accent text-sm">
         &larr; Dashboard
       </a>
       <h1 class="text-2xl font-semibold sm:text-3xl">New Post</h1>
@@ -27,7 +24,7 @@ if (!import.meta.env.DEV) {
         id="slug-input"
         type="text"
         placeholder="my-post-slug"
-        class="bg-background border-border rounded border p-2 w-full focus:outline-2 focus:outline-accent"
+        class="bg-background border-border focus:outline-accent w-full rounded border p-2 focus:outline-2"
       />
     </div>
 
@@ -40,9 +37,13 @@ if (!import.meta.env.DEV) {
           id="zh-file"
           type="file"
           accept=".md,.mdx"
-          class="bg-background border-border rounded border p-2 w-full text-sm"
+          class="bg-background border-border w-full rounded border p-2 text-sm"
         />
-        <div id="zh-preview" class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"></div>
+        <div
+          id="zh-preview"
+          class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"
+        >
+        </div>
       </div>
 
       <!-- English -->
@@ -53,9 +54,13 @@ if (!import.meta.env.DEV) {
           id="en-file"
           type="file"
           accept=".md,.mdx"
-          class="bg-background border-border rounded border p-2 w-full text-sm"
+          class="bg-background border-border w-full rounded border p-2 text-sm"
         />
-        <div id="en-preview" class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"></div>
+        <div
+          id="en-preview"
+          class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"
+        >
+        </div>
       </div>
     </div>
 
@@ -84,7 +89,10 @@ if (!import.meta.env.DEV) {
     return name;
   }
 
-  function parseRaw(raw: string): { frontmatter: Record<string, unknown>; body: string } {
+  function parseRaw(raw: string): {
+    frontmatter: Record<string, unknown>;
+    body: string;
+  } {
     const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
     if (!m) return { frontmatter: {}, body: raw };
     const body = m[2];
@@ -118,10 +126,13 @@ if (!import.meta.env.DEV) {
     const input = document.getElementById(fileInputId) as HTMLInputElement;
     const preview = document.getElementById(previewId)!;
 
-    return new Promise((resolve) => {
+    return new Promise(resolve => {
       input.addEventListener("change", async () => {
         const file = input.files?.[0];
-        if (!file) { resolve(null); return; }
+        if (!file) {
+          resolve(null);
+          return;
+        }
 
         // Auto-suggest slug from first file
         const slugInput = document.getElementById(
@@ -144,16 +155,25 @@ if (!import.meta.env.DEV) {
   }
 
   // Read files for upload
-  let zhData: { frontmatter: Record<string, unknown>; content: string } | null = null;
-  let enData: { frontmatter: Record<string, unknown>; content: string } | null = null;
+  let zhData: { frontmatter: Record<string, unknown>; content: string } | null =
+    null;
+  let enData: { frontmatter: Record<string, unknown>; content: string } | null =
+    null;
 
-  setupFilePreview("zh-file", "zh-preview").then((d) => { zhData = d; });
-  setupFilePreview("en-file", "en-preview").then((d) => { enData = d; });
+  setupFilePreview("zh-file", "zh-preview").then(d => {
+    zhData = d;
+  });
+  setupFilePreview("en-file", "en-preview").then(d => {
+    enData = d;
+  });
 
   document.getElementById("submit-btn")!.addEventListener("click", async () => {
-    const slug = (document.getElementById("slug-input") as HTMLInputElement).value.trim();
+    const slug = (
+      document.getElementById("slug-input") as HTMLInputElement
+    ).value.trim();
     if (!slug) {
-      document.getElementById("submit-msg")!.textContent = "Please enter a slug";
+      document.getElementById("submit-msg")!.textContent =
+        "Please enter a slug";
       return;
     }
 
@@ -175,7 +195,8 @@ if (!import.meta.env.DEV) {
     }
 
     if (!body.zh && !body.en) {
-      document.getElementById("submit-msg")!.textContent = "Please select at least one file";
+      document.getElementById("submit-msg")!.textContent =
+        "Please select at least one file";
       return;
     }
 

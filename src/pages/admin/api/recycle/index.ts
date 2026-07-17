@@ -1,5 +1,9 @@
 import type { APIRoute } from "astro";
-import { listRecycled, restoreFromRecycle, permanentDelete } from "../../_utils/fs";
+import {
+  listRecycled,
+  restoreFromRecycle,
+  permanentDelete,
+} from "../../_utils/fs";
 import type { ApiResponse, RecycleEntry } from "../../_utils/types";
 
 function getSlug(url: URL): string {
@@ -9,7 +13,9 @@ function getSlug(url: URL): string {
 export const GET: APIRoute = async () => {
   if (!import.meta.env.DEV) return new Response(null, { status: 404 });
   const entries = await listRecycled();
-  return Response.json({ success: true, data: entries } satisfies ApiResponse<RecycleEntry[]>);
+  return Response.json({ success: true, data: entries } satisfies ApiResponse<
+    RecycleEntry[]
+  >);
 };
 
 export const POST: APIRoute = async ({ url }) => {
@@ -19,7 +25,10 @@ export const POST: APIRoute = async ({ url }) => {
     return Response.json({ success: true } satisfies ApiResponse);
   } catch (err) {
     return Response.json(
-      { success: false, error: err instanceof Error ? err.message : "Unknown error" } satisfies ApiResponse,
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      } satisfies ApiResponse,
       { status: 500 }
     );
   }
@@ -32,7 +41,10 @@ export const DELETE: APIRoute = async ({ url }) => {
     return Response.json({ success: true } satisfies ApiResponse);
   } catch (err) {
     return Response.json(
-      { success: false, error: err instanceof Error ? err.message : "Unknown error" } satisfies ApiResponse,
+      {
+        success: false,
+        error: err instanceof Error ? err.message : "Unknown error",
+      } satisfies ApiResponse,
       { status: 500 }
     );
   }

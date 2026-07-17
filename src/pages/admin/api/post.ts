@@ -30,9 +30,14 @@ export const GET: APIRoute = async ({ url }) => {
       }
     }
 
-    return Response.json({ success: true, data: result } satisfies ApiResponse<Record<string, unknown>>);
+    return Response.json({ success: true, data: result } satisfies ApiResponse<
+      Record<string, unknown>
+    >);
   } catch (err) {
-    return Response.json({ success: false, error: String(err) } satisfies ApiResponse, { status: 500 });
+    return Response.json(
+      { success: false, error: String(err) } satisfies ApiResponse,
+      { status: 500 }
+    );
   }
 };
 

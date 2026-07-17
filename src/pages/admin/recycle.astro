@@ -12,11 +12,15 @@ if (!import.meta.env.DEV) {
   <Header />
   <main class="app-layout mt-8 pb-12">
     <div class="mb-6 flex items-center gap-4">
-      <a href="/admin" class="text-muted-foreground hover:text-accent text-sm">&larr; Dashboard</a>
+      <a href="/admin" class="text-muted-foreground hover:text-accent text-sm"
+        >&larr; Dashboard</a
+      >
       <h1 class="text-2xl font-semibold sm:text-3xl">Recycle Bin</h1>
     </div>
 
-    <div id="loading" class="text-muted-foreground text-center py-8">Loading...</div>
+    <div id="loading" class="text-muted-foreground py-8 text-center">
+      Loading...
+    </div>
 
     <div id="table-container" class="hidden overflow-x-auto">
       <table class="w-full border-collapse text-sm">
@@ -33,14 +37,20 @@ if (!import.meta.env.DEV) {
       </table>
     </div>
 
-    <p id="empty-msg" class="text-muted-foreground mt-8 text-center hidden">Recycle bin is empty.</p>
+    <p id="empty-msg" class="text-muted-foreground mt-8 hidden text-center">
+      Recycle bin is empty.
+    </p>
   </main>
 </Layout>
 
 <script>
   async function load() {
     const res = await fetch("/admin/api/recycle");
-    if (!res.ok) { document.getElementById("loading")!.textContent = "Error loading recycle bin."; return; }
+    if (!res.ok) {
+      document.getElementById("loading")!.textContent =
+        "Error loading recycle bin.";
+      return;
+    }
     const { data: entries } = await res.json();
     document.getElementById("loading")!.classList.add("hidden");
 
@@ -73,20 +83,25 @@ if (!import.meta.env.DEV) {
       tbody.appendChild(tr);
     });
 
-    document.querySelectorAll(".restore-btn").forEach((btn) => {
+    document.querySelectorAll(".restore-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const slug = (btn as HTMLElement).dataset.slug!;
-        const res = await fetch(`/admin/api/recycle?slug=${slug}`, { method: "POST" });
+        const res = await fetch(`/admin/api/recycle?slug=${slug}`, {
+          method: "POST",
+        });
         if (res.ok) window.location.reload();
         else alert(`Error: ${(await res.json()).error}`);
       });
     });
 
-    document.querySelectorAll(".perm-delete-btn").forEach((btn) => {
+    document.querySelectorAll(".perm-delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const slug = (btn as HTMLElement).dataset.slug!;
-        if (!confirm(`Permanently delete "${slug}"? This cannot be undone.`)) return;
-        const res = await fetch(`/admin/api/recycle?slug=${slug}`, { method: "DELETE" });
+        if (!confirm(`Permanently delete "${slug}"? This cannot be undone.`))
+          return;
+        const res = await fetch(`/admin/api/recycle?slug=${slug}`, {
+          method: "DELETE",
+        });
         if (res.ok) window.location.reload();
         else alert(`Error: ${(await res.json()).error}`);
       });

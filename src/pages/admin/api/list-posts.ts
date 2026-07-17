@@ -7,7 +7,9 @@ export const GET: APIRoute = async () => {
 
   try {
     const posts = await listAllPosts();
-    return Response.json({ success: true, data: posts } satisfies ApiResponse<PostPair[]>);
+    return Response.json({ success: true, data: posts } satisfies ApiResponse<
+      PostPair[]
+    >);
   } catch (err) {
     return Response.json(
       {

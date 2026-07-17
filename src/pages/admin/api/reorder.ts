@@ -10,7 +10,10 @@ export const POST: APIRoute = async ({ request }) => {
     const { slugs }: ReorderInput = await request.json();
     if (!Array.isArray(slugs)) {
       return Response.json(
-        { success: false, error: "slugs must be an array" } satisfies ApiResponse,
+        {
+          success: false,
+          error: "slugs must be an array",
+        } satisfies ApiResponse,
         { status: 400 }
       );
     }

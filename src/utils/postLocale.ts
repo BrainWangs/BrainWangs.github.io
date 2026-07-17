@@ -58,10 +58,9 @@ export function getMatchedPostId(id: string, targetLocale: PostLocale): string {
  *   const posts = await getCollection("posts");
  *   const zhPosts = filterPostsByLocale(posts, "zh");
  */
-export function filterPostsByLocale<T extends { id: string; data?: { lang?: string | null } }>(
-  entries: T[],
-  locale: string
-): T[] {
+export function filterPostsByLocale<
+  T extends { id: string; data?: { lang?: string | null } },
+>(entries: T[], locale: string): T[] {
   return entries.filter(entry => {
     // 1. Check data.lang first (most reliable, explicitly set in frontmatter)
     if (entry.data?.lang) {

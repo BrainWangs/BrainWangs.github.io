@@ -10,8 +10,7 @@ tags:
   - TailwindCSS
   - 无头CMS
   - 博客
-description:
-  "示例文章：我使用 NextJS 和无头 CMS 开发第一个作品集网站和博客的经历。"
+description: "示例文章：我使用 NextJS 和无头 CMS 开发第一个作品集网站和博客的经历。"
 timezone: "Asia/Yangon"
 ---
 

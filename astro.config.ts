@@ -59,16 +59,51 @@ export default defineConfig({
       provider: fontProviders.local(),
       options: {
         variants: [
-          { src: ["./src/assets/fonts/GoogleSansCode-Light.ttf"], weight: "300" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-LightItalic.ttf"], weight: "300" as const, style: "italic" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-Regular.ttf"], weight: "400" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-Italic.ttf"], weight: "400" as const, style: "italic" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-Medium.ttf"], weight: "500" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-MediumItalic.ttf"], weight: "500" as const, style: "italic" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-SemiBold.ttf"], weight: "600" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-SemiBoldItalic.ttf"], weight: "600" as const, style: "italic" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-Bold.ttf"], weight: "700" as const },
-          { src: ["./src/assets/fonts/GoogleSansCode-BoldItalic.ttf"], weight: "700" as const, style: "italic" as const },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-Light.ttf"],
+            weight: "300" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-LightItalic.ttf"],
+            weight: "300" as const,
+            style: "italic" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-Regular.ttf"],
+            weight: "400" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-Italic.ttf"],
+            weight: "400" as const,
+            style: "italic" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-Medium.ttf"],
+            weight: "500" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-MediumItalic.ttf"],
+            weight: "500" as const,
+            style: "italic" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-SemiBold.ttf"],
+            weight: "600" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-SemiBoldItalic.ttf"],
+            weight: "600" as const,
+            style: "italic" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-Bold.ttf"],
+            weight: "700" as const,
+          },
+          {
+            src: ["./src/assets/fonts/GoogleSansCode-BoldItalic.ttf"],
+            weight: "700" as const,
+            style: "italic" as const,
+          },
         ],
       },
     },

@@ -14,12 +14,22 @@ if (!import.meta.env.DEV) {
     <div class="mb-6 flex items-center justify-between">
       <h1 class="text-2xl font-semibold sm:text-3xl">Admin Panel</h1>
       <div class="flex gap-2">
-        <a href="/admin/new" class="bg-accent text-accent-foreground rounded px-4 py-2 text-sm hover:opacity-90">+ New Post</a>
-        <a href="/admin/recycle" class="bg-muted text-muted-foreground rounded px-4 py-2 text-sm hover:opacity-90">Recycle Bin</a>
+        <a
+          href="/admin/new"
+          class="bg-accent text-accent-foreground rounded px-4 py-2 text-sm hover:opacity-90"
+          >+ New Post</a
+        >
+        <a
+          href="/admin/recycle"
+          class="bg-muted text-muted-foreground rounded px-4 py-2 text-sm hover:opacity-90"
+          >Recycle Bin</a
+        >
       </div>
     </div>
 
-    <div id="loading" class="text-muted-foreground text-center py-8">Loading posts...</div>
+    <div id="loading" class="text-muted-foreground py-8 text-center">
+      Loading posts...
+    </div>
 
     <div id="table-container" class="hidden overflow-x-auto">
       <table class="w-full border-collapse text-sm">
@@ -36,8 +46,10 @@ if (!import.meta.env.DEV) {
       </table>
     </div>
 
-    <p id="empty-msg" class="text-muted-foreground mt-8 text-center hidden">
-      No posts yet. <a href="/admin/new" class="text-accent underline">Create your first post</a>
+    <p id="empty-msg" class="text-muted-foreground mt-8 hidden text-center">
+      No posts yet. <a href="/admin/new" class="text-accent underline"
+        >Create your first post</a
+      >
     </p>
   </main>
 </Layout>
@@ -65,12 +77,17 @@ if (!import.meta.env.DEV) {
       tr.setAttribute("data-post-slug", post.slug as string);
       tr.setAttribute("data-post-row", "");
       tr.draggable = true;
-      tr.className = "border-border border-b hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing";
+      tr.className =
+        "border-border border-b hover:bg-muted/50 transition-colors cursor-grab active:cursor-grabbing";
 
-      const title = (post.zhFrontmatter as Record<string, unknown>)?.title ||
-        (post.enFrontmatter as Record<string, unknown>)?.title || "—";
-      const date = (post.zhFrontmatter as Record<string, unknown>)?.pubDatetime ||
-        (post.enFrontmatter as Record<string, unknown>)?.pubDatetime || "—";
+      const title =
+        (post.zhFrontmatter as Record<string, unknown>)?.title ||
+        (post.enFrontmatter as Record<string, unknown>)?.title ||
+        "—";
+      const date =
+        (post.zhFrontmatter as Record<string, unknown>)?.pubDatetime ||
+        (post.enFrontmatter as Record<string, unknown>)?.pubDatetime ||
+        "—";
 
       tr.innerHTML = `
         <td class="p-2 max-w-[200px] truncate font-mono text-xs">${post.slug}</td>
@@ -95,11 +112,18 @@ if (!import.meta.env.DEV) {
   }
 
   function attachDeleteHandlers() {
-    document.querySelectorAll(".delete-btn").forEach((btn) => {
+    document.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const slug = (btn as HTMLElement).dataset.slug!;
-        if (!confirm(`Delete "${slug}"? This will delete BOTH Chinese and English versions.`)) return;
-        const res = await fetch(`/admin/api/post?slug=${slug}`, { method: "DELETE" });
+        if (
+          !confirm(
+            `Delete "${slug}"? This will delete BOTH Chinese and English versions.`
+          )
+        )
+          return;
+        const res = await fetch(`/admin/api/post?slug=${slug}`, {
+          method: "DELETE",
+        });
         if (res.ok) window.location.reload();
         else alert(`Error: ${(await res.json()).error}`);
       });
@@ -109,30 +133,36 @@ if (!import.meta.env.DEV) {
   function attachDragDrop() {
     let dragSource: HTMLElement | null = null;
 
-    document.querySelectorAll<HTMLElement>("[data-post-row]").forEach((row) => {
-      row.addEventListener("dragstart", (e) => {
+    document.querySelectorAll<HTMLElement>("[data-post-row]").forEach(row => {
+      row.addEventListener("dragstart", e => {
         dragSource = row;
         row.classList.add("opacity-50");
         e.dataTransfer!.effectAllowed = "move";
       });
       row.addEventListener("dragend", () => {
         row.classList.remove("opacity-50");
-        document.querySelectorAll("[data-post-row]").forEach((r) => r.classList.remove("border-t-2", "border-accent"));
+        document
+          .querySelectorAll("[data-post-row]")
+          .forEach(r => r.classList.remove("border-t-2", "border-accent"));
         dragSource = null;
       });
-      row.addEventListener("dragover", (e) => {
+      row.addEventListener("dragover", e => {
         e.preventDefault();
         e.dataTransfer!.dropEffect = "move";
         row.classList.add("border-t-2", "border-accent");
       });
-      row.addEventListener("dragleave", () => row.classList.remove("border-t-2", "border-accent"));
-      row.addEventListener("drop", async (e) => {
+      row.addEventListener("dragleave", () =>
+        row.classList.remove("border-t-2", "border-accent")
+      );
+      row.addEventListener("drop", async e => {
         e.preventDefault();
         row.classList.remove("border-t-2", "border-accent");
         if (!dragSource || dragSource === row) return;
         const parent = row.parentNode!;
         parent.insertBefore(dragSource, row);
-        const newOrder = [...parent.querySelectorAll<HTMLElement>("[data-post-row]")].map((r) => r.dataset.postSlug!);
+        const newOrder = [
+          ...parent.querySelectorAll<HTMLElement>("[data-post-row]"),
+        ].map(r => r.dataset.postSlug!);
         const res = await fetch("/admin/api/reorder", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
