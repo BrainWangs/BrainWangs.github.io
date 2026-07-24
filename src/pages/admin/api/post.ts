@@ -9,7 +9,11 @@ import {
   parseFrontmatter,
   normalizeFrontmatterDates,
 } from "../_utils/frontmatter";
-import type { ApiResponse, UpdatePostInput, PostFrontmatter } from "../_utils/types";
+import type {
+  ApiResponse,
+  UpdatePostInput,
+  PostFrontmatter,
+} from "../_utils/types";
 
 // This endpoint is admin-only and dev-only (see DEV guard in each
 // handler). `prerender = false` was previously set so PUT/DELETE
@@ -93,7 +97,8 @@ export const PUT: APIRoute = async ({ url, request }) => {
         if (!mergedFrontmatter.pubDatetime && existing) {
           const raw = await readRawPost(existing);
           const oldFm = parseFrontmatter(raw).frontmatter;
-          if (oldFm.pubDatetime) mergedFrontmatter.pubDatetime = oldFm.pubDatetime;
+          if (oldFm.pubDatetime)
+            mergedFrontmatter.pubDatetime = oldFm.pubDatetime;
         }
 
         // Always refresh modDatetime so the post sorts to the top via

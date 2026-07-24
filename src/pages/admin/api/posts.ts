@@ -42,12 +42,7 @@ export const POST: APIRoute = async ({ request }) => {
         // instances so serializeFrontmatter emits unquoted YAML timestamps
         // accepted by the `z.date()` schema in content.config.ts.
         const safeFrontmatter = normalizeFrontmatterDates(body[lc].frontmatter);
-        await writePostFile(
-          body.slug,
-          lc,
-          safeFrontmatter,
-          body[lc].content
-        );
+        await writePostFile(body.slug, lc, safeFrontmatter, body[lc].content);
       }
     }
 

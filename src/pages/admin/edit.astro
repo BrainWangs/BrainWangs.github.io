@@ -68,7 +68,8 @@ const slug = Astro.url.searchParams.get("slug") || "";
             ></textarea>
           </div>
           <div>
-            <label class="block text-xs">标签 (逗号分隔,可下拉选择)</label><input
+            <label class="block text-xs">标签 (逗号分隔,可下拉选择)</label
+            ><input
               id="zh-tags"
               list="zh-tags-list"
               type="text"
@@ -133,7 +134,9 @@ const slug = Astro.url.searchParams.get("slug") || "";
             ></textarea>
           </div>
           <div>
-            <label class="block text-xs">Tags (comma-separated, dropdown available)</label><input
+            <label class="block text-xs"
+              >Tags (comma-separated, dropdown available)</label
+            ><input
               id="en-tags"
               list="en-tags-list"
               type="text"
@@ -342,16 +345,18 @@ const slug = Astro.url.searchParams.get("slug") || "";
       if (res.ok) setTimeout(() => (msg.textContent = ""), 2000);
     });
 
-    document.getElementById("delete-btn")!.addEventListener("click", async () => {
-      if (!confirm(`Delete "${getSlug()}"? This will delete BOTH versions.`))
-        return;
-      const res = await fetch(`/admin/api/post?slug=${getSlug()}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
+    document
+      .getElementById("delete-btn")!
+      .addEventListener("click", async () => {
+        if (!confirm(`Delete "${getSlug()}"? This will delete BOTH versions.`))
+          return;
+        const res = await fetch(`/admin/api/post?slug=${getSlug()}`, {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (res.ok) window.location.href = "/admin";
+        else alert(`Error: ${(await res.json()).error}`);
       });
-      if (res.ok) window.location.href = "/admin";
-      else alert(`Error: ${(await res.json()).error}`);
-    });
 
     document.querySelectorAll(".toggle-preview").forEach(btn => {
       btn.addEventListener("click", async () => {

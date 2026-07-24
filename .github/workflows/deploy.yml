@@ -1,15 +1,17 @@
 name: Deploy to GitHub Pages
 
+# Triggers on every push to main, plus manual dispatch from the Actions tab.
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-# Allow only one concurrent deployment
+# Only one deployment at a time — cancel any in-flight run when a new push lands.
 concurrency:
   group: pages
   cancel-in-progress: true
 
+# GitHub Pages deployments need these tokens.
 permissions:
   contents: read
   pages: write
@@ -22,37 +24,43 @@ jobs:
     timeout-minutes: 10
 
     steps:
-      - name: "☁️ Checkout repository"
-        # v4 runs on Node 20 (deprecated Sep 2025); v5 runs on Node 24.
+      # v5 runs on Node 24 (v4 used Node 20, deprecated Sep 2025).
+      - name: Checkout
         uses: actions/checkout@v5
 
-      - name: "📦 Install pnpm"
-        # Intentionally no `version` input — pnpm/action-setup@v4 reads
-        # the `packageManager` field in package.json (currently
-        # pnpm@11.15.1+sha512...). Pinning a different version here caused
-        # ERR_PNPM_BAD_PM_VERSION because it conflicts with package.json.
+      # No `version` input — pnpm/action-setup@v4 reads the `packageManager`
+      # field from package.json (pnpm@11.15.1). Pinning a different version
+      # here caused ERR_PNPM_BAD_PM_VERSION in earlier runs.
+      - name: Install pnpm
         uses: pnpm/action-setup@v4
 
-      - name: "⚡ Use Node.js"
-        # v4 runs on Node 20 (deprecated Sep 2025); v5 runs on Node 24.
+      # Node 22 matches the `engines.node` requirement in package.json (>=22.12).
+      # v5 runs on Node 24 (v4 used Node 20, deprecated Sep 2025).
+      - name: Setup Node.js
         uses: actions/setup-node@v5
         with:
           node-version: "22"
           cache: "pnpm"
 
-      - name: "📦 Install dependencies"
+      - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: "🔎 Lint code"
+      # Quality gates — must pass before the site is built and deployed.
+      # Both checks are green locally; keeping them in CI catches regressions.
+      - name: Lint
         run: pnpm run lint
 
-      - name: "📝 Check code formatting"
+      - name: Check formatting
         run: pnpm run format:check
 
-      - name: "🚀 Build the project"
+      # Build script: astro check (type-check) → astro build (SSG) →
+      # pagefind (search index) → copy pagefind to public/ (for dev search).
+      # The copy step uses node fs.cpSync which is cross-platform (works on
+      # both Windows local dev and Ubuntu CI).
+      - name: Build
         run: pnpm run build
 
-      - name: "📤 Upload Pages artifact"
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: dist
@@ -66,6 +74,6 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
-      - name: "🚀 Deploy to Pages"
+      - name: Deploy to Pages
         id: deployment
         uses: actions/deploy-pages@v4

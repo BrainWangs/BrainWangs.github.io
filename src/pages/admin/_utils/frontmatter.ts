@@ -30,9 +30,7 @@ const DATE_KEYS = ["pubDatetime", "modDatetime"] as const;
  * serializes them as YAML timestamps (unquoted) rather than strings.
  * Idempotent — Date instances pass through unchanged.
  */
-export function normalizeFrontmatterDates<T extends PostFrontmatter>(
-  fm: T
-): T {
+export function normalizeFrontmatterDates<T extends PostFrontmatter>(fm: T): T {
   const out = { ...fm } as Record<string, unknown>;
   for (const key of DATE_KEYS) {
     const v = out[key];

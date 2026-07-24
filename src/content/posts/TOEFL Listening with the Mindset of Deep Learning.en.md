@@ -1,13 +1,14 @@
 ---
 pubDatetime: 2026-07-23T03:05:00.000Z
 title: TOEFL Listening with the Mindset of Deep Learning
-description: ''
+description: ""
 draft: false
 featured: true
 modDatetime: 2026-07-24T03:15:32.952Z
 tags:
   - TOEFL
 ---
+
 ## Preface
 
 > Published on 2022-12-9, zhouyifan.net
@@ -22,7 +23,7 @@ The TOEFL listening section primarily involves two types of materials: conversat
 
 A TOEFL listening section without the experimental section consists of two parts. Each part includes 1 conversation and 1-2 lectures. Conversations have 5 questions, and lectures have 6.
 
-The answering format differs from most domestic English tests. For each listening passage, you can only see the questions *after* you have finished listening to the audio. Furthermore, you can only proceed to the next question after confirming your answer for the current one. You are, however, allowed to take notes while listening.
+The answering format differs from most domestic English tests. For each listening passage, you can only see the questions _after_ you have finished listening to the audio. Furthermore, you can only proceed to the next question after confirming your answer for the current one. You are, however, allowed to take notes while listening.
 
 All questions are multiple-choice. Each listening passage allows about 3-4 minutes for answering, so time is generally not an issue.
 
@@ -54,7 +55,7 @@ What is "reverse masking"? As we know, a mask, in computing, is data used to blo
 
 In TOEFL listening, the audio is opaque. You need to use your listening ability to convert it into understandable text. If you directly turn the listening material into reading material, you can answer based on the transcript. This way, the task only tests comprehension ability, removing the listening and memory components.
 
-Therefore, to assess your *comprehension* ability: **Listen to the material once, answer the questions (without checking answers), then read the transcript, and answer the questions again.** The first pass is normal practice; the second pass is the controlled variable. If you still get many wrong on the second pass, your comprehension is weak. If you got significantly more wrong on the first pass compared to the second, then listening and memory are problematic.
+Therefore, to assess your _comprehension_ ability: **Listen to the material once, answer the questions (without checking answers), then read the transcript, and answer the questions again.** The first pass is normal practice; the second pass is the controlled variable. If you still get many wrong on the second pass, your comprehension is weak. If you got significantly more wrong on the first pass compared to the second, then listening and memory are problematic.
 
 To further distinguish between listening and memory issues, we can adjust the "reverse masking" with a more refined controlled variable: **Listen to the material once, answer the questions (without checking answers), then listen to the material again, and answer the questions again.** During the second listening, you already know the questions, eliminating the memory problem. If you still get many wrong on the second pass, listening and comprehension are issues. If you got significantly more wrong on the first pass compared to the second, then memory is the primary issue. Of course, if your comprehension is largely solid, this step can isolate listening problems from memory problems directly.
 
@@ -87,11 +88,11 @@ How can you learn to identify question points in the listening material? Two thi
 
 Here are a few examples of techniques I discovered:
 
-*   Conversations almost always (90%) ask about the *reason* for initiating the conversation. Note that this isn't asking for the main topic but *why* the student went to the professor or vice versa. They might exchange pleasantries for a while, and then the student hesitantly states the real reason, after which the topic shifts immediately. If you don't anticipate this question point, that crucial sentence might slip by you.
-*   Lectures often present a theory first, then an example. Questions will ask which theory the example illustrates. If the example happens to include two proper nouns, and you aren't prepared, you'll likely forget that example. So, when you hear an example, quickly jot down the key nouns involved.
-*   Both the professor and students may express attitudes towards a theory. Especially at the end, the professor might suddenly say, "Although this theory is famous, I don't really agree with it." Questions love to test these attitudes. You might have struggled through 4 minutes of lecture, think it's over, and relax, only to miss these crucial final sentences.
+- Conversations almost always (90%) ask about the _reason_ for initiating the conversation. Note that this isn't asking for the main topic but _why_ the student went to the professor or vice versa. They might exchange pleasantries for a while, and then the student hesitantly states the real reason, after which the topic shifts immediately. If you don't anticipate this question point, that crucial sentence might slip by you.
+- Lectures often present a theory first, then an example. Questions will ask which theory the example illustrates. If the example happens to include two proper nouns, and you aren't prepared, you'll likely forget that example. So, when you hear an example, quickly jot down the key nouns involved.
+- Both the professor and students may express attitudes towards a theory. Especially at the end, the professor might suddenly say, "Although this theory is famous, I don't really agree with it." Questions love to test these attitudes. You might have struggled through 4 minutes of lecture, think it's over, and relax, only to miss these crucial final sentences.
 
-Identifying question points is a relatively basic skill. For those aiming higher, there's a more advanced, generalized method. I call it the "Attention-Based Memory Method." Listening materials, even reading materials, and many forms of textual information in our lives, contain a lot of filler. If you know which parts are substantive and which are not, you can filter out the fluff and concentrate on memorizing what's meaningful. Going further, if you know which parts of the listening material will definitely not be tested, you can filter those out too. You can focus your attention *only* on the meaningful statements that are likely to be questioned.
+Identifying question points is a relatively basic skill. For those aiming higher, there's a more advanced, generalized method. I call it the "Attention-Based Memory Method." Listening materials, even reading materials, and many forms of textual information in our lives, contain a lot of filler. If you know which parts are substantive and which are not, you can filter out the fluff and concentrate on memorizing what's meaningful. Going further, if you know which parts of the listening material will definitely not be tested, you can filter those out too. You can focus your attention _only_ on the meaningful statements that are likely to be questioned.
 
 For example, phrases like "Long time no see," or "Last class we covered X, but today..." can be treated as filler and safely ignored. Similarly, overly specific biographical details, like where a famous person was born or which year they attended a certain school, are unlikely to be tested and can be ignored.
 
@@ -134,7 +135,7 @@ Let's consolidate the preparation methods and test-taking strategies for TOEFL l
 **During the Test:**
 
 1.  Listen to the audio, convert the speech to text in your mind, and determine if the sentence contains key information.
-2.  If the sentence is important, actively memorize it or take notes. For conversations, minimal notes (or even none) might be okay. For lectures, you *must* note down key information like examples, classifications, attitudes, etc.
+2.  If the sentence is important, actively memorize it or take notes. For conversations, minimal notes (or even none) might be okay. For lectures, you _must_ note down key information like examples, classifications, attitudes, etc.
 3.  Answer questions based on your notes or memory.
 
 Ultimately, the TOEFL listening section fundamentally tests listening ability. If your foundational listening is weak, allocate most of your time to building that foundation. Once your listening level is adequate, you can apply the strategies covered in this article to convert your listening ability into a higher score. I hope everyone achieves a good TOEFL score.
