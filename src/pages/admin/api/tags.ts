@@ -51,6 +51,7 @@ export const GET: APIRoute = async () => {
     // Surface the full stack on the server console so the next 500 is
     // debuggable. The client only gets the message — the stack may
     // contain file paths we don't want to leak to the browser.
+    // eslint-disable-next-line no-console
     console.error("[/admin/api/tags] failed:", err);
     return Response.json(
       {

@@ -112,6 +112,7 @@ export async function listAllPosts(): Promise<PostPair[]> {
               pair.enFrontmatter = fm;
             }
           } catch (parseErr) {
+            // eslint-disable-next-line no-console
             console.warn(
               `[admin] skipping malformed post file: ${filePath}`,
               parseErr
