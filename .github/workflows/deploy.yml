@@ -23,12 +23,15 @@ jobs:
 
     steps:
       - name: "☁️ Checkout repository"
-        uses: actions/checkout@v4
+        # v4 runs on Node 20 (deprecated Sep 2025); v5 runs on Node 24.
+        uses: actions/checkout@v5
 
       - name: "📦 Install pnpm"
+        # Intentionally no `version` input — pnpm/action-setup@v4 reads
+        # the `packageManager` field in package.json (currently
+        # pnpm@11.15.1+sha512...). Pinning a different version here caused
+        # ERR_PNPM_BAD_PM_VERSION because it conflicts with package.json.
         uses: pnpm/action-setup@v4
-        with:
-          version: "11.13.0"
 
       - name: "⚡ Use Node.js"
         uses: actions/setup-node@v4
