@@ -3,11 +3,11 @@ import { writePostFile, findPostFile } from "../_utils/fs";
 import { normalizeFrontmatterDates } from "../_utils/frontmatter";
 import type { CreatePostInput, ApiResponse } from "../_utils/types";
 
-// Astro v7 with `output: 'static'` only runs GET handlers on endpoints by
-// default. POST/PUT/DELETE handlers are silently dropped unless the page is
-// marked as server-rendered. This is the root cause of "post submission
-// fails silently" — without this line, the handler never runs.
-export const prerender = false;
+// Admin-only, dev-only endpoint. `prerender = false` was previously
+// set to keep POST alive in dev, but Astro v7 dev mode serves all
+// methods regardless. Setting it triggered NoAdapterInstalled during
+// `astro build` (static deploys have no SSR adapter). Removing it
+// lets astro build succeed while dev still routes POST correctly.
 
 export const POST: APIRoute = async ({ request }) => {
   if (!import.meta.env.DEV) return new Response(null, { status: 404 });

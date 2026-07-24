@@ -3,13 +3,11 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import config from "@/config";
 
-// Astro v7 static mode pre-renders pages by default. A pre-rendered page
-// loses access to request-time query params — `Astro.url.searchParams` is
-// empty because the page was generated at build time without the runtime
-// URL. This is why `slug` was always "" and the edit form never populated.
-// Marking the page as server-rendered restores access to the live URL.
-export const prerender = false;
-
+// In dev, Astro.url.searchParams is populated per-request. In production
+// builds (prerender = true by default), searchParams is empty so `slug`
+// falls back to "" — harmless because the DEV guard above returns 404
+// for the production-built artifact, so no real user ever loads this
+// page in production. The admin UI is dev-only by design.
 if (!import.meta.env.DEV) {
   return new Response("Not found", { status: 404 });
 }

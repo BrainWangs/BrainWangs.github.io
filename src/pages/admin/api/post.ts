@@ -11,9 +11,14 @@ import {
 } from "../_utils/frontmatter";
 import type { ApiResponse, UpdatePostInput, PostFrontmatter } from "../_utils/types";
 
-// Astro v7 static mode: GET runs by default, but PUT and DELETE handlers
-// are silently dropped unless this endpoint is marked server-rendered.
-export const prerender = false;
+// This endpoint is admin-only and dev-only (see DEV guard in each
+// handler). `prerender = false` was previously set so PUT/DELETE
+// wouldn't be dropped in dev, but in Astro v7 dev mode all HTTP
+// methods are served regardless of prerender. Setting prerender =
+// false triggered a "NoAdapterInstalled" error during `astro build`
+// because static deploys have no SSR adapter. Removing it lets
+// `astro build` prerender the GET handler (which returns 404 in
+// production) while dev still routes POST/PUT/DELETE correctly.
 
 function getSlug(url: URL): string {
   return url.searchParams.get("slug") || "";
@@ -93,7 +98,9 @@ export const PUT: APIRoute = async ({ url, request }) => {
 
         // Always refresh modDatetime so the post sorts to the top via
         // getSortedPosts (which sorts by modDatetime ?? pubDatetime).
-        mergedFrontmatter.modDatetime = new Date();
+        // Use ISO string — modDatetime's schema is string (same as
+        // pubDatetime), not Date. astro check enforces this at build time.
+        mergedFrontmatter.modDatetime = new Date().toISOString();
 
         const safeFrontmatter = normalizeFrontmatterDates(mergedFrontmatter);
         await writePostFile(slug, lc, safeFrontmatter, body[lc].content, ext);

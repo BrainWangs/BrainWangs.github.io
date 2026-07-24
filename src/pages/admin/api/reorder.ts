@@ -2,8 +2,8 @@ import type { APIRoute } from "astro";
 import { writePostOrder } from "../_utils/fs";
 import type { ApiResponse, ReorderInput } from "../_utils/types";
 
-// Astro v7 static mode drops POST handlers unless prerender is disabled.
-export const prerender = false;
+// Admin-only, dev-only endpoint. See posts.ts for rationale on
+// why `prerender = false` was removed (NoAdapterInstalled on build).
 
 export const POST: APIRoute = async ({ request }) => {
   if (!import.meta.env.DEV) return new Response(null, { status: 404 });

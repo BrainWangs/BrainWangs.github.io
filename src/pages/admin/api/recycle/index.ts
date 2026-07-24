@@ -6,8 +6,8 @@ import {
 } from "../../_utils/fs";
 import type { ApiResponse, RecycleEntry } from "../../_utils/types";
 
-// Astro v7 static mode drops POST/DELETE handlers unless prerender is disabled.
-export const prerender = false;
+// Admin-only, dev-only endpoint. See posts.ts for rationale on
+// why `prerender = false` was removed (NoAdapterInstalled on build).
 
 function getSlug(url: URL): string {
   return url.searchParams.get("slug") || "";
