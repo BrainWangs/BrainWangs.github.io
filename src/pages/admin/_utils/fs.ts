@@ -2,6 +2,7 @@ import type { PostFrontmatter, PostPair, RecycleEntry } from "./types";
 
 export const RECYCLE_PATH = "src/content/_recycle";
 const METADATA_FILE = "_metadata.json";
+const ORDER_FILE = "_order.json";
 const EXTENSIONS = [".md", ".mdx"] as const;
 
 // Lazily load Node.js modules — only available in dev mode.
@@ -92,20 +93,30 @@ export async function listAllPosts(): Promise<PostPair[]> {
         }
         const pair = pairs.get(slug)!;
         const filePath = rel;
-        if (locale === "zh") {
-          pair.zh = filePath;
-          const raw = await fs.readFile(
-            await resolvePostPath(filePath),
-            "utf-8"
-          );
-          pair.zhFrontmatter = parse(raw).frontmatter;
-        } else if (locale === "en") {
-          pair.en = filePath;
-          const raw = await fs.readFile(
-            await resolvePostPath(filePath),
-            "utf-8"
-          );
-          pair.enFrontmatter = parse(raw).frontmatter;
+        if (locale === "zh" || locale === "en") {
+          // Read + parse in a try block so ONE malformed file (bad YAML,
+          // BOM-only content, weird frontmatter) does not 500 the whole
+          // listAllPosts call. The malformed file is skipped with a
+          // console warning; the rest of the post list still renders.
+          try {
+            const raw = await fs.readFile(
+              await resolvePostPath(filePath),
+              "utf-8"
+            );
+            const fm = parse(raw).frontmatter;
+            if (locale === "zh") {
+              pair.zh = filePath;
+              pair.zhFrontmatter = fm;
+            } else {
+              pair.en = filePath;
+              pair.enFrontmatter = fm;
+            }
+          } catch (parseErr) {
+            console.warn(
+              `[admin] skipping malformed post file: ${filePath}`,
+              parseErr
+            );
+          }
         }
       }
     }
@@ -121,6 +132,28 @@ export async function listAllPosts(): Promise<PostPair[]> {
       b.zhFrontmatter?.pubDatetime ?? b.enFrontmatter?.pubDatetime ?? "";
     return new Date(bDate).getTime() - new Date(aDate).getTime();
   });
+
+  // Apply any manually-saved admin ordering on top of the date sort.
+  // Slugs in the order file come first (in their declared order), the rest
+  // keep the date-descending order from above. Slugs in the order file that
+  // no longer exist are silently dropped.
+  const savedOrder = await readPostOrder();
+  if (savedOrder.length > 0) {
+    const knownSlugs = new Set(result.map(p => p.slug));
+    const pinned = savedOrder.filter(s => knownSlugs.has(s));
+    if (pinned.length > 0) {
+      result.sort((a, b) => {
+        const aIdx = pinned.indexOf(a.slug);
+        const bIdx = pinned.indexOf(b.slug);
+        if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+        if (aIdx !== -1) return -1;
+        if (bIdx !== -1) return 1;
+        // Neither is pinned: keep their existing (date-desc) order.
+        return 0;
+      });
+    }
+  }
+
   return result;
 }
 
@@ -177,10 +210,11 @@ export async function moveToRecycle(slug: string): Promise<void> {
   const metadata = await readMetadata();
   let deleted = false;
 
-  const postsDir = await (async () => {
-    const { BLOG_PATH } = await import("@/content.config");
-    return BLOG_PATH;
-  })();
+  // Ensure the recycle directory exists before trying to rename into it.
+  // `fs.rename` does not create intermediate directories, and on a fresh
+  // project `src/content/_recycle/` may not exist yet, causing ENOENT.
+  const recycleDir = await resolveRecyclePath("");
+  await fs.mkdir(recycleDir, { recursive: true });
 
   for (const locale of ["zh", "en"] as const) {
     const file = await findPostFile(slug, locale);
@@ -291,4 +325,43 @@ export async function listRecycled(): Promise<RecycleEntry[]> {
     });
   }
   return entries;
+}
+
+// ---- Manual Post Ordering ----
+//
+// The admin UI supports drag-and-drop reordering of the post list. The
+// previous implementation overwrote each post's `pubDatetime` to encode the
+// order, which permanently destroyed the original publish date and broke
+// historical archives. We now persist the manual order in a separate
+// metadata file (`src/content/_order.json`) keyed by slug — the source files
+// themselves are left untouched.
+
+async function resolveOrderPath(): Promise<string> {
+  const { path } = await ensureFS();
+  const { BLOG_PATH } = await import("@/content.config");
+  // Store alongside posts so it's part of the same content tree but ignored
+  // by the glob loader (pattern `**/[^_]*.{md,mdx}` skips `_`-prefixed files).
+  return path.resolve(process.cwd(), BLOG_PATH, ORDER_FILE);
+}
+
+export async function readPostOrder(): Promise<string[]> {
+  const { fs } = await ensureFS();
+  try {
+    const raw = await fs.readFile(await resolveOrderPath(), "utf-8");
+    const data = JSON.parse(raw);
+    return Array.isArray(data.order) ? (data.order as string[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function writePostOrder(slugs: string[]): Promise<void> {
+  const { fs, path } = await ensureFS();
+  const filePath = await resolveOrderPath();
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  await fs.writeFile(
+    filePath,
+    JSON.stringify({ order: slugs }, null, 2),
+    "utf-8"
+  );
 }

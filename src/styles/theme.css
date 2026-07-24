@@ -7,20 +7,31 @@
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-border: var(--border);
+  --color-code-bg: var(--code-bg);
   --font-app:
     var(--font-google-sans-code), "Microsoft YaHei", "微软雅黑", sans-serif;
 }
 
-/* Light theme values */
+/* Light theme values — Anthropic-inspired warm cream palette */
 :root,
 [data-theme="light"] {
-  --background: #fdfdfd;
+  /* #f0eee6 is Anthropic's signature cream background; gives the whole
+     site a warm, paper-like feel rather than the cold flat white of the
+     original #fdfdfd. */
+  --background: #f0eee6;
   --foreground: #282728;
   --accent: #006cac;
   --accent-foreground: #ffffff;
-  --muted: #e6e6e6;
+  /* Muted now skews warm-grey to harmonise with the cream background —
+     a pure cool grey like #e6e6e6 would look disconnected on #f0eee6. */
+  --muted: #e6e3da;
   --muted-foreground: #6b7280;
-  --border: #ece9e9;
+  /* Border darkened from #ece9e9 → #dcd8cc so it stays visible against
+     the cream background (the old value was nearly invisible on #f0eee6). */
+  --border: #dcd8cc;
+  /* Code block background: light warm grey, darker than the page bg so
+     code blocks "recede" rather than glow brighter than surrounding text. */
+  --code-bg: #e8e5dc;
 }
 
 /* Dark theme values */
@@ -32,4 +43,6 @@
   --muted: #343f60;
   --muted-foreground: #afb9ca;
   --border: #ab4b08;
+  /* Keep Shiki's night-owl dark background for code blocks in dark mode. */
+  --code-bg: #011627;
 }

@@ -44,6 +44,17 @@ if (!import.meta.env.DEV) {
           class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"
         >
         </div>
+        <div class="mt-3">
+          <label class="mb-1 block text-xs">标签 (逗号分隔,可下拉选择或输入新标签)</label>
+          <input
+            id="zh-tags"
+            list="zh-tags-list"
+            type="text"
+            placeholder="标签1, 标签2"
+            class="bg-background border-border w-full rounded border p-1.5 text-sm"
+          />
+          <datalist id="zh-tags-list"></datalist>
+        </div>
       </div>
 
       <!-- English -->
@@ -60,6 +71,17 @@ if (!import.meta.env.DEV) {
           id="en-preview"
           class="app-prose border-border mt-3 hidden min-h-[200px] rounded border p-4"
         >
+        </div>
+        <div class="mt-3">
+          <label class="mb-1 block text-xs">Tags (comma-separated, dropdown available)</label>
+          <input
+            id="en-tags"
+            list="en-tags-list"
+            type="text"
+            placeholder="tag1, tag2"
+            class="bg-background border-border w-full rounded border p-1.5 text-sm"
+          />
+          <datalist id="en-tags-list"></datalist>
         </div>
       </div>
     </div>
@@ -83,141 +105,328 @@ if (!import.meta.env.DEV) {
 </Layout>
 
 <script>
+  // Browser-safe frontmatter parser.
+  //
+  // gray-matter (used on the server) depends on Node's `Buffer`, which does
+  // not exist in the browser. Importing it here caused `Buffer is not
+  // defined` errors, the file `change` handler threw before the preview
+  // could render, and `zhData`/`enData` stayed null — so the submit check
+  // ("Please select at least one file") fired even after a file was
+  // picked. This is the root cause of "无法上传和提交" on the new-post page.
+  //
+  // This minimal parser handles the YAML subset used by blog frontmatter:
+  //   - `key: value` scalars (string, number, boolean, null)
+  //   - quoted strings ("..." and '...')
+  //   - block sequences (`- item` under a key)
+  //   - block strings (indented continuation lines joined with spaces)
+  //   - comments (# ...) and blank lines
+  function parseFrontmatter(raw: string): {
+    frontmatter: Record<string, unknown>;
+    content: string;
+  } {
+    const text = raw.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n");
+    const m = text.match(/^---\n([\s\S]*?)\n---\n?/);
+    if (!m) return { frontmatter: {}, content: text.trimStart() };
+    return {
+      frontmatter: parseSimpleYaml(m[1]),
+      content: text.slice(m[0].length).trimStart(),
+    };
+  }
+
+  function parseSimpleYaml(yaml: string): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
+    const lines = yaml.split("\n");
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) { i++; continue; }
+      const kv = line.match(/^(\w[\w-]*)\s*:\s*(.*)$/);
+      if (!kv) { i++; continue; }
+      const key = kv[1];
+      let value = kv[2].trim();
+      if (value !== "") {
+        result[key] = parseScalar(value);
+        i++;
+        continue;
+      }
+      // Block value: collect subsequent indented lines.
+      i++;
+      const seq: unknown[] = [];
+      const textParts: string[] = [];
+      let isSeq = false;
+      let isText = false;
+      while (i < lines.length) {
+        const sub = lines[i];
+        if (sub.trim() !== "" && !/^\s/.test(sub)) break;
+        if (sub.trim() === "") { i++; continue; }
+        const s = sub.trim();
+        if (s.startsWith("- ")) { isSeq = true; seq.push(parseScalar(s.slice(2))); }
+        else if (s === "-") { isSeq = true; seq.push(""); }
+        else { isText = true; textParts.push(s); }
+        i++;
+      }
+      if (isSeq && !isText) result[key] = seq;
+      else if (isText && !isSeq) result[key] = textParts.join(" ");
+      else if (isSeq && isText) result[key] = seq;
+      else result[key] = "";
+    }
+    return result;
+  }
+
+  function parseScalar(raw: string): unknown {
+    const v = raw.trim();
+    // Inline flow sequence: [a, b, c] or ["a", "b", "c"].
+    // Real-world posts (including all default AstroPaper content) use
+    // inline array syntax for tags. Without this branch, `tags: [a, b]`
+    // would parse as the literal string "[a, b]" instead of an array,
+    // breaking the tag prefill feature in setupFilePreview().
+    if (v.startsWith("[") && v.endsWith("]")) {
+      const inner = v.slice(1, -1).trim();
+      if (inner === "") return [];
+      return splitFlowSequence(inner).map(s => parseScalar(s));
+    }
+    if (v === "true") return true;
+    if (v === "false") return false;
+    if (v === "null" || v === "~" || v === "") return null;
+    if (/^-?\d+$/.test(v)) return parseInt(v, 10);
+    if (/^-?\d+\.\d+$/.test(v)) return parseFloat(v);
+    if ((v.startsWith('"') && v.endsWith('"')) || (v.startsWith("'") && v.endsWith("'"))) {
+      return v.slice(1, -1);
+    }
+    return v;
+  }
+
+  // Split a flow sequence's inner content on commas, respecting quotes.
+  // Needed so `["a, b", c]` splits into `'"a, b"'` and `c` (the comma
+  // inside the quoted string is preserved).
+  function splitFlowSequence(inner: string): string[] {
+    const parts: string[] = [];
+    let cur = "";
+    let inQuote: '"' | "'" | null = null;
+    for (let i = 0; i < inner.length; i++) {
+      const c = inner[i];
+      if (inQuote) {
+        cur += c;
+        if (c === inQuote) inQuote = null;
+      } else if (c === '"' || c === "'") {
+        inQuote = c;
+        cur += c;
+      } else if (c === ",") {
+        parts.push(cur.trim());
+        cur = "";
+      } else {
+        cur += c;
+      }
+    }
+    if (cur.trim() !== "") parts.push(cur.trim());
+    return parts;
+  }
+
   function suggestSlug(filename: string): string {
     let name = filename.replace(/\.(md|mdx)$/, "");
     name = name.replace(/\.(zh|en)$/, "");
     return name;
   }
 
-  function parseRaw(raw: string): {
-    frontmatter: Record<string, unknown>;
-    body: string;
-  } {
-    const m = raw.match(/^---\n([\s\S]*?)\n---\n?([\s\S]*)$/);
-    if (!m) return { frontmatter: {}, body: raw };
-    const body = m[2];
-    const frontmatter: Record<string, unknown> = {};
-    let key = "";
-    for (const line of m[1].split("\n")) {
-      const kv = line.match(/^(\w[\w-]*):\s*(.*)/);
-      if (kv) {
-        key = kv[1];
-        const val = kv[2].trim();
-        frontmatter[key] = val || "";
-      } else if (key && line.startsWith("  - ")) {
-        const existing = frontmatter[key];
-        if (Array.isArray(existing)) {
-          existing.push(line.replace(/^\s*-\s*/, "").trim());
-        } else {
-          frontmatter[key] = [line.replace(/^\s*-\s*/, "").trim()];
-        }
-      }
-    }
-    return { frontmatter, body };
-  }
-
-  async function setupFilePreview(
-    fileInputId: string,
-    previewId: string
-  ): Promise<{
-    frontmatter: Record<string, unknown>;
-    content: string;
-  } | null> {
-    const input = document.getElementById(fileInputId) as HTMLInputElement;
-    const preview = document.getElementById(previewId)!;
-
-    return new Promise(resolve => {
-      input.addEventListener("change", async () => {
-        const file = input.files?.[0];
-        if (!file) {
-          resolve(null);
-          return;
-        }
-
-        // Auto-suggest slug from first file
-        const slugInput = document.getElementById(
-          "slug-input"
-        ) as HTMLInputElement;
-        const suggested = suggestSlug(file.name);
-        if (!slugInput.value || slugInput.value === suggestSlug(suggested)) {
-          slugInput.value = suggested;
-        }
-
-        const raw = await file.text();
-        const { frontmatter, body } = parseRaw(raw);
-        const { marked } = await import("marked");
-        preview.innerHTML = marked.parse(body) as string;
-        preview.classList.remove("hidden");
-
-        resolve({ frontmatter, content: body });
-      });
-    });
-  }
-
-  // Read files for upload
+  // Read files for upload. Using module-scoped mutable refs so re-selecting
+  // a file after the first pick keeps the data fresh (the previous Promise-
+  // based implementation resolved only once and ignored later changes).
   let zhData: { frontmatter: Record<string, unknown>; content: string } | null =
     null;
   let enData: { frontmatter: Record<string, unknown>; content: string } | null =
     null;
 
-  setupFilePreview("zh-file", "zh-preview").then(d => {
-    zhData = d;
-  });
-  setupFilePreview("en-file", "en-preview").then(d => {
-    enData = d;
-  });
+  function setupFilePreview(
+    fileInputId: string,
+    previewId: string,
+    tagsInputId: string,
+    onUpdate: (data: { frontmatter: Record<string, unknown>; content: string } | null) => void
+  ) {
+    const input = document.getElementById(fileInputId) as HTMLInputElement;
+    const preview = document.getElementById(previewId)!;
+    const tagsInput = document.getElementById(tagsInputId) as HTMLInputElement;
 
-  document.getElementById("submit-btn")!.addEventListener("click", async () => {
-    const slug = (
-      document.getElementById("slug-input") as HTMLInputElement
-    ).value.trim();
-    if (!slug) {
-      document.getElementById("submit-msg")!.textContent =
-        "Please enter a slug";
-      return;
-    }
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0];
+      if (!file) {
+        onUpdate(null);
+        preview.classList.add("hidden");
+        return;
+      }
 
-    const body: Record<string, unknown> = { slug };
+      // Auto-suggest slug from the first file picked (only if user hasn't
+      // typed anything custom).
+      const slugInput = document.getElementById(
+        "slug-input"
+      ) as HTMLInputElement;
+      if (!slugInput.value.trim()) {
+        slugInput.value = suggestSlug(file.name);
+      }
 
-    if (zhData) {
-      const fm = zhData.frontmatter;
-      if (!fm.pubDatetime) fm.pubDatetime = new Date().toISOString();
-      if (!fm.title) fm.title = slug;
-      if (!fm.description) fm.description = "";
-      body.zh = { frontmatter: fm, content: zhData.content };
-    }
-    if (enData) {
-      const fm = enData.frontmatter;
-      if (!fm.pubDatetime) fm.pubDatetime = new Date().toISOString();
-      if (!fm.title) fm.title = slug;
-      if (!fm.description) fm.description = "";
-      body.en = { frontmatter: fm, content: enData.content };
-    }
+      const raw = await file.text();
+      // Parse frontmatter with the browser-safe inline parser (gray-matter
+      // depends on Node's Buffer and throws in the browser).
+      const { frontmatter, content: body } = parseFrontmatter(raw);
+      const { marked } = await import("marked");
+      preview.innerHTML = marked.parse(body) as string;
+      preview.classList.remove("hidden");
 
-    if (!body.zh && !body.en) {
-      document.getElementById("submit-msg")!.textContent =
-        "Please select at least one file";
-      return;
-    }
+      // Pre-fill the tags input from the file's frontmatter. The user can
+      // still edit this — if they type something else, their input takes
+      // priority over the file's tags at submit time (see submit handler).
+      const fileTags = Array.isArray(frontmatter.tags)
+        ? (frontmatter.tags as string[]).join(", ")
+        : "";
+      // Only pre-fill if the user hasn't typed anything yet. If they already
+      // typed tags manually, respect their input and don't overwrite.
+      if (!tagsInput.value.trim()) {
+        tagsInput.value = fileTags;
+      }
 
-    const msg = document.getElementById("submit-msg")!;
-    msg.textContent = "Publishing...";
-    const btn = document.getElementById("submit-btn")! as HTMLButtonElement;
-    btn.disabled = true;
-
-    const res = await fetch("/admin/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
+      onUpdate({ frontmatter, content: body });
     });
+  }
 
-    const data = await res.json();
-    if (res.ok) {
-      msg.textContent = "Published! Redirecting...";
-      window.location.href = `/admin/edit/${slug}`;
-    } else {
-      msg.textContent = `Error: ${data.error}`;
-      btn.disabled = false;
+  // Populate the zh/en tag <datalist> elements from /admin/api/tags.
+  //
+  // Failure is non-fatal — if the endpoint errors, the datalists stay empty
+  // and the tag inputs degrade to plain text fields (no dropdown suggestions
+  // but still fully usable). This matches the design: tag selection is a UX
+  // enhancement, not a required step for publishing.
+  async function loadTagDatalists() {
+    try {
+      const res = await fetch("/admin/api/tags");
+      if (!res.ok) return;
+      const { data } = await res.json();
+      const zhList = document.getElementById("zh-tags-list");
+      const enList = document.getElementById("en-tags-list");
+      if (!zhList || !enList) return;
+      // Clear any existing options (from a previous page-load cycle).
+      zhList.innerHTML = "";
+      enList.innerHTML = "";
+      for (const tag of data.zh || []) {
+        const opt = document.createElement("option");
+        opt.value = tag;
+        zhList.appendChild(opt);
+      }
+      for (const tag of data.en || []) {
+        const opt = document.createElement("option");
+        opt.value = tag;
+        enList.appendChild(opt);
+      }
+    } catch {
+      // Network/parse error — leave datalists empty.
     }
-  });
+  }
+
+  function setupNewPostPage() {
+    const submitBtn = document.getElementById("submit-btn");
+    // Guard: only run setup on the new-post page. `astro:page-load` fires
+    // on every navigation (because this script is bundled once for the
+    // whole site by the ClientRouter), so other admin pages would otherwise
+    // throw here.
+    if (!submitBtn) return;
+    // Avoid double-binding if setup runs twice on the same DOM (defensive
+    // — astro:page-load should fire exactly once per swap, but the guard is
+    // cheap). After a view transition the DOM is fresh, so this attribute
+    // won't be set on the new element and setup proceeds normally.
+    if (submitBtn.dataset.bound === "1") return;
+    submitBtn.dataset.bound = "1";
+
+    // Reset file data on each page load — the file inputs are fresh DOM
+    // elements after a view transition, so any previously picked file is
+    // gone and the cached frontmatter/content is stale.
+    zhData = null;
+    enData = null;
+
+    setupFilePreview("zh-file", "zh-preview", "zh-tags", v => { zhData = v; });
+    setupFilePreview("en-file", "en-preview", "en-tags", v => { enData = v; });
+    loadTagDatalists();
+
+    submitBtn.addEventListener("click", async () => {
+      const slug = (
+        document.getElementById("slug-input") as HTMLInputElement
+      ).value.trim();
+      if (!slug) {
+        document.getElementById("submit-msg")!.textContent =
+          "Please enter a slug";
+        return;
+      }
+
+      const body: Record<string, unknown> = { slug };
+
+      if (zhData) {
+        const fm = { ...zhData.frontmatter };
+        if (!fm.pubDatetime) fm.pubDatetime = new Date().toISOString();
+        if (!fm.title) fm.title = slug;
+        if (!fm.description) fm.description = "";
+        // User input in the tags field takes priority over file frontmatter.
+        // If the user typed tags, use those; otherwise the file's tags (if
+        // any) are already in fm.tags from parseFrontmatter.
+        const zhTagsInput = (
+          document.getElementById("zh-tags") as HTMLInputElement
+        ).value.trim();
+        if (zhTagsInput) {
+          fm.tags = zhTagsInput
+            .split(",")
+            .map(x => x.trim())
+            .filter(Boolean);
+        }
+        body.zh = { frontmatter: fm, content: zhData.content };
+      }
+      if (enData) {
+        const fm = { ...enData.frontmatter };
+        if (!fm.pubDatetime) fm.pubDatetime = new Date().toISOString();
+        if (!fm.title) fm.title = slug;
+        if (!fm.description) fm.description = "";
+        const enTagsInput = (
+          document.getElementById("en-tags") as HTMLInputElement
+        ).value.trim();
+        if (enTagsInput) {
+          fm.tags = enTagsInput
+            .split(",")
+            .map(x => x.trim())
+            .filter(Boolean);
+        }
+        body.en = { frontmatter: fm, content: enData.content };
+      }
+
+      if (!body.zh && !body.en) {
+        document.getElementById("submit-msg")!.textContent =
+          "Please select at least one file";
+        return;
+      }
+
+      const msg = document.getElementById("submit-msg")!;
+      msg.textContent = "Publishing...";
+      const btn = document.getElementById("submit-btn")! as HTMLButtonElement;
+      btn.disabled = true;
+
+      const res = await fetch("/admin/api/posts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      const data = await res.json();
+      if (res.ok) {
+        msg.textContent = "Published! Redirecting...";
+        // Use ?slug= query (the edit page route) and encode the slug in case
+        // it contains a subdirectory slash.
+        window.location.href = `/admin/edit?slug=${encodeURIComponent(slug)}`;
+      } else {
+        msg.textContent = `Error: ${data.error}`;
+        btn.disabled = false;
+      }
+    });
+  }
+
+  // ClientRouter (View Transitions) swaps the DOM on client-side navigation
+  // but does NOT re-execute bundled <script> tags. Without listening for
+  // `astro:page-load`, the submit handler only attached on a full page
+  // reload — navigating from /admin to /admin/new via a link click left
+  // #submit-btn with no listener, which is why clicks "didn't fire".
+  // `astro:page-load` fires both on initial load and after every swap.
+  document.addEventListener("astro:page-load", setupNewPostPage);
 </script>

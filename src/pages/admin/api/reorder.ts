@@ -1,7 +1,9 @@
 import type { APIRoute } from "astro";
-import { findPostFile, readRawPost, writePostFile } from "../_utils/fs";
-import { parseFrontmatter } from "../_utils/frontmatter";
+import { writePostOrder } from "../_utils/fs";
 import type { ApiResponse, ReorderInput } from "../_utils/types";
+
+// Astro v7 static mode drops POST handlers unless prerender is disabled.
+export const prerender = false;
 
 export const POST: APIRoute = async ({ request }) => {
   if (!import.meta.env.DEV) return new Response(null, { status: 404 });
@@ -18,24 +20,11 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    const now = Date.now();
-
-    for (let i = 0; i < slugs.length; i++) {
-      const newPubDatetime = new Date(now - i * 60000).toISOString();
-
-      for (const lc of ["zh", "en"] as const) {
-        const file = await findPostFile(slugs[i], lc);
-        if (file) {
-          const raw = await readRawPost(file);
-          const { frontmatter, content } = parseFrontmatter(raw);
-          frontmatter.pubDatetime = newPubDatetime;
-          const ext = file.endsWith(".mdx")
-            ? (".mdx" as const)
-            : (".md" as const);
-          await writePostFile(slugs[i], lc, frontmatter, content, ext);
-        }
-      }
-    }
+    // Persist the manual order in a sidecar metadata file instead of
+    // rewriting each post's `pubDatetime`. The previous implementation
+    // overwrote the original publish date (and re-saved every file), which
+    // broke historical archives and was destructive.
+    await writePostOrder(slugs);
 
     return Response.json({ success: true } satisfies ApiResponse);
   } catch (err) {

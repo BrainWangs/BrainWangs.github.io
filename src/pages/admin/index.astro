@@ -74,7 +74,8 @@ if (!import.meta.env.DEV) {
 
     posts.forEach((post: Record<string, unknown>) => {
       const tr = document.createElement("tr");
-      tr.setAttribute("data-post-slug", post.slug as string);
+      const slug = post.slug as string;
+      tr.setAttribute("data-post-slug", slug);
       tr.setAttribute("data-post-row", "");
       tr.draggable = true;
       tr.className =
@@ -84,14 +85,21 @@ if (!import.meta.env.DEV) {
         (post.zhFrontmatter as Record<string, unknown>)?.title ||
         (post.enFrontmatter as Record<string, unknown>)?.title ||
         "—";
-      const date =
+      // Show only the date portion (YYYY-MM-DD) of the ISO timestamp.
+      // Full timestamp (e.g. "2024-01-15T04:05:06Z") is too noisy in the
+      // list view; the edit page still shows full datetime via datetime-local.
+      const rawDate =
         (post.zhFrontmatter as Record<string, unknown>)?.pubDatetime ||
-        (post.enFrontmatter as Record<string, unknown>)?.pubDatetime ||
-        "—";
+        (post.enFrontmatter as Record<string, unknown>)?.pubDatetime;
+      const date = typeof rawDate === "string" ? rawDate.slice(0, 10) : "—";
+
+      // Encode the slug for URL use — slugs may contain subdirectory
+      // slashes (e.g. "examples/my-post") or other reserved characters.
+      const encodedSlug = encodeURIComponent(slug);
 
       tr.innerHTML = `
-        <td class="p-2 max-w-[200px] truncate font-mono text-xs">${post.slug}</td>
-        <td class="p-2">${title}</td>
+        <td class="p-2 max-w-[160px] truncate font-mono text-xs">${slug}</td>
+        <td class="p-2 max-w-[400px] truncate" title="${title}">${title}</td>
         <td class="p-2 text-xs text-muted-foreground whitespace-nowrap">${date}</td>
         <td class="p-2 text-center">
           <div class="flex justify-center gap-1">
@@ -100,8 +108,8 @@ if (!import.meta.env.DEV) {
           </div>
         </td>
         <td class="p-2 text-right whitespace-nowrap">
-          <a href="/admin/edit?slug=${post.slug}" class="bg-muted text-muted-foreground rounded px-3 py-1 text-xs hover:opacity-90">Edit</a>
-          <button class="delete-btn bg-red-600 text-white rounded px-3 py-1 text-xs hover:bg-red-700 ml-1" data-slug="${post.slug}">Delete</button>
+          <a href="/admin/edit?slug=${encodedSlug}" class="bg-muted text-muted-foreground rounded px-3 py-1 text-xs hover:opacity-90">Edit</a>
+          <button class="delete-btn bg-red-600 text-white rounded px-3 py-1 text-xs hover:bg-red-700 ml-1" data-slug="${encodedSlug}">Delete</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -114,15 +122,19 @@ if (!import.meta.env.DEV) {
   function attachDeleteHandlers() {
     document.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const slug = (btn as HTMLElement).dataset.slug!;
+        const encodedSlug = (btn as HTMLElement).dataset.slug!;
+        const slug = decodeURIComponent(encodedSlug);
         if (
           !confirm(
             `Delete "${slug}"? This will delete BOTH Chinese and English versions.`
           )
         )
           return;
-        const res = await fetch(`/admin/api/post?slug=${slug}`, {
+        const res = await fetch(`/admin/api/post?slug=${encodedSlug}`, {
           method: "DELETE",
+          // Explicit Content-Type avoids Astro's "Cross-site form submission"
+          // CSRF check that fires for body-less POST/DELETE requests.
+          headers: { "Content-Type": "application/json" },
         });
         if (res.ok) window.location.reload();
         else alert(`Error: ${(await res.json()).error}`);
@@ -174,6 +186,14 @@ if (!import.meta.env.DEV) {
     });
   }
 
-  document.addEventListener("astro:after-swap", loadPosts);
-  loadPosts();
+  // ClientRouter (View Transitions) swaps the DOM on client-side navigation
+  // but does NOT re-execute bundled <script> tags. `astro:after-swap` fired
+  // on every navigation — even to other admin pages where #loading doesn't
+  // exist — throwing null-reference errors. `astro:page-load` also fires
+  // on every navigation, but we guard with the page-specific element so
+  // setup only runs when we're actually on /admin.
+  document.addEventListener("astro:page-load", () => {
+    if (!document.getElementById("post-table-body")) return;
+    loadPosts();
+  });
 </script>

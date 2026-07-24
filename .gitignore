@@ -34,3 +34,6 @@ compose.override.yaml
 
 # Playwright MCP
 .playwright-mcp/
+
+# Admin panel test scripts and screenshots
+tests_admin/

@@ -54,19 +54,25 @@ if (!import.meta.env.DEV) {
     const { data: entries } = await res.json();
     document.getElementById("loading")!.classList.add("hidden");
 
+    const tbody = document.getElementById("recycle-table-body")!;
+    tbody.innerHTML = "";
+    document.getElementById("table-container")!.classList.add("hidden");
+    document.getElementById("empty-msg")!.classList.add("hidden");
+
     if (!entries || entries.length === 0) {
       document.getElementById("empty-msg")!.classList.remove("hidden");
       return;
     }
 
     document.getElementById("table-container")!.classList.remove("hidden");
-    const tbody = document.getElementById("recycle-table-body")!;
 
     entries.forEach((e: Record<string, unknown>) => {
       const tr = document.createElement("tr");
       tr.className = "border-border border-b hover:bg-muted/50";
+      const slug = e.slug as string;
+      const encodedSlug = encodeURIComponent(slug);
       tr.innerHTML = `
-        <td class="p-2 max-w-[200px] truncate font-mono text-xs">${e.slug}</td>
+        <td class="p-2 max-w-[200px] truncate font-mono text-xs">${slug}</td>
         <td class="p-2 text-xs text-muted-foreground">${e.originalPath || "/"}</td>
         <td class="p-2 text-center">
           <div class="flex justify-center gap-1">
@@ -76,8 +82,8 @@ if (!import.meta.env.DEV) {
         </td>
         <td class="p-2 text-xs text-muted-foreground whitespace-nowrap">${new Date(e.deletedAt as string).toLocaleString()}</td>
         <td class="p-2 text-right whitespace-nowrap">
-          <button class="restore-btn bg-accent text-accent-foreground rounded px-3 py-1 text-xs hover:opacity-90" data-slug="${e.slug}">Restore</button>
-          <button class="perm-delete-btn bg-red-600 text-white rounded px-3 py-1 text-xs hover:bg-red-700 ml-1" data-slug="${e.slug}">Delete Forever</button>
+          <button class="restore-btn bg-accent text-accent-foreground rounded px-3 py-1 text-xs hover:opacity-90" data-slug="${encodedSlug}">Restore</button>
+          <button class="perm-delete-btn bg-red-600 text-white rounded px-3 py-1 text-xs hover:bg-red-700 ml-1" data-slug="${encodedSlug}">Delete Forever</button>
         </td>
       `;
       tbody.appendChild(tr);
@@ -85,9 +91,11 @@ if (!import.meta.env.DEV) {
 
     document.querySelectorAll(".restore-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const slug = (btn as HTMLElement).dataset.slug!;
-        const res = await fetch(`/admin/api/recycle?slug=${slug}`, {
+        const encodedSlug = (btn as HTMLElement).dataset.slug!;
+        const slug = decodeURIComponent(encodedSlug);
+        const res = await fetch(`/admin/api/recycle?slug=${encodedSlug}`, {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
         });
         if (res.ok) window.location.reload();
         else alert(`Error: ${(await res.json()).error}`);
@@ -96,11 +104,13 @@ if (!import.meta.env.DEV) {
 
     document.querySelectorAll(".perm-delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
-        const slug = (btn as HTMLElement).dataset.slug!;
+        const encodedSlug = (btn as HTMLElement).dataset.slug!;
+        const slug = decodeURIComponent(encodedSlug);
         if (!confirm(`Permanently delete "${slug}"? This cannot be undone.`))
           return;
-        const res = await fetch(`/admin/api/recycle?slug=${slug}`, {
+        const res = await fetch(`/admin/api/recycle?slug=${encodedSlug}`, {
           method: "DELETE",
+          headers: { "Content-Type": "application/json" },
         });
         if (res.ok) window.location.reload();
         else alert(`Error: ${(await res.json()).error}`);
@@ -108,5 +118,14 @@ if (!import.meta.env.DEV) {
     });
   }
 
-  load();
+  // ClientRouter (View Transitions) swaps the DOM on client-side navigation
+  // but does NOT re-execute bundled <script> tags. `astro:after-swap` fired
+  // on every navigation — even to other admin pages where #loading doesn't
+  // exist — throwing null-reference errors. `astro:page-load` also fires
+  // on every navigation, but we guard with the page-specific element so
+  // setup only runs when we're actually on /admin/recycle.
+  document.addEventListener("astro:page-load", () => {
+    if (!document.getElementById("recycle-table-body")) return;
+    load();
+  });
 </script>

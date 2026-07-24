@@ -3,6 +3,13 @@ import Layout from "@/layouts/Layout.astro";
 import Header from "@/components/Header.astro";
 import config from "@/config";
 
+// Astro v7 static mode pre-renders pages by default. A pre-rendered page
+// loses access to request-time query params — `Astro.url.searchParams` is
+// empty because the page was generated at build time without the runtime
+// URL. This is why `slug` was always "" and the edit form never populated.
+// Marking the page as server-rendered restores access to the live URL.
+export const prerender = false;
+
 if (!import.meta.env.DEV) {
   return new Response("Not found", { status: 404 });
 }
@@ -42,46 +49,48 @@ const slug = Astro.url.searchParams.get("slug") || "";
         </h2>
         <div class="grid grid-cols-2 gap-2 text-sm">
           <div>
-            <label class="block text-xs">Title</label><input
+            <label class="block text-xs">标题</label><input
               id="zh-title"
               type="text"
               class="bg-background border-border w-full rounded border p-1.5 text-sm"
             />
           </div>
           <div>
-            <label class="block text-xs">pubDatetime</label><input
+            <label class="block text-xs">发布时间</label><input
               id="zh-date"
               type="datetime-local"
               class="bg-background border-border w-full rounded border p-1.5 text-sm"
             />
           </div>
           <div class="col-span-2">
-            <label class="block text-xs">Description</label><textarea
+            <label class="block text-xs">描述</label><textarea
               id="zh-desc"
               rows="2"
               class="bg-background border-border w-full rounded border p-1.5 text-sm"
             ></textarea>
           </div>
           <div>
-            <label class="block text-xs">Tags (comma-separated)</label><input
+            <label class="block text-xs">标签 (逗号分隔,可下拉选择)</label><input
               id="zh-tags"
+              list="zh-tags-list"
               type="text"
               class="bg-background border-border w-full rounded border p-1.5 text-sm"
             />
+            <datalist id="zh-tags-list"></datalist>
           </div>
           <div>
-            <label class="block text-xs">Options</label><div
+            <label class="block text-xs">选项</label><div
               class="mt-1 flex gap-3"
             >
               <label class="flex items-center gap-1 text-xs"
-                ><input id="zh-draft" type="checkbox" /> Draft</label
+                ><input id="zh-draft" type="checkbox" /> 草稿</label
               ><label class="flex items-center gap-1 text-xs"
-                ><input id="zh-featured" type="checkbox" /> Featured</label
+                ><input id="zh-featured" type="checkbox" /> 精选</label
               >
             </div>
           </div>
         </div>
-        <label class="mt-3 mb-1 block text-xs">Content (Markdown)</label>
+        <label class="mt-3 mb-1 block text-xs">正文 (Markdown)</label>
         <textarea
           id="zh-content"
           rows="20"
@@ -90,7 +99,7 @@ const slug = Astro.url.searchParams.get("slug") || "";
         <button
           class="toggle-preview text-accent mt-2 text-xs"
           data-textarea="zh-content"
-          data-preview="zh-preview">Toggle Preview</button
+          data-preview="zh-preview">切换预览</button
         >
         <div
           id="zh-preview"
@@ -126,11 +135,13 @@ const slug = Astro.url.searchParams.get("slug") || "";
             ></textarea>
           </div>
           <div>
-            <label class="block text-xs">Tags (comma-separated)</label><input
+            <label class="block text-xs">Tags (comma-separated, dropdown available)</label><input
               id="en-tags"
+              list="en-tags-list"
               type="text"
               class="bg-background border-border w-full rounded border p-1.5 text-sm"
             />
+            <datalist id="en-tags-list"></datalist>
           </div>
           <div>
             <label class="block text-xs">Options</label><div
@@ -225,8 +236,8 @@ const slug = Astro.url.searchParams.get("slug") || "";
     populateField("zh", data.zh?.frontmatter);
     setVal("zh", "content", data.zh?.content || "");
     document.getElementById("zh-status")!.innerHTML = data.zh
-      ? '<span class="text-green-500">&check; exists</span>'
-      : '<span class="text-muted-foreground">not created</span>';
+      ? '<span class="text-green-500">&check; 已存在</span>'
+      : '<span class="text-muted-foreground">未创建</span>';
 
     populateField("en", data.en?.frontmatter);
     setVal("en", "content", data.en?.content || "");
@@ -234,9 +245,6 @@ const slug = Astro.url.searchParams.get("slug") || "";
       ? '<span class="text-green-500">&check; exists</span>'
       : '<span class="text-muted-foreground">not created</span>';
   }
-
-  document.addEventListener("astro:after-swap", load);
-  load();
 
   function buildFrontmatter(prefix: string): Record<string, unknown> {
     const fm: Record<string, unknown> = {};
@@ -266,53 +274,110 @@ const slug = Astro.url.searchParams.get("slug") || "";
     return fm;
   }
 
-  document.getElementById("save-btn")!.addEventListener("click", async () => {
-    const body: Record<string, unknown> = {};
-    const zhC = (
-      document.getElementById("zh-content") as HTMLTextAreaElement
-    ).value.trim();
-    const enC = (
-      document.getElementById("en-content") as HTMLTextAreaElement
-    ).value.trim();
-    if (zhC) body.zh = { frontmatter: buildFrontmatter("zh"), content: zhC };
-    if (enC) body.en = { frontmatter: buildFrontmatter("en"), content: enC };
-
-    const msg = document.getElementById("save-msg")!;
-    msg.textContent = "Saving...";
-    const res = await fetch(`/admin/api/post?slug=${getSlug()}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    const data = await res.json();
-    msg.textContent = res.ok ? "Saved!" : `Error: ${data.error}`;
-    if (res.ok) setTimeout(() => (msg.textContent = ""), 2000);
-  });
-
-  document.getElementById("delete-btn")!.addEventListener("click", async () => {
-    if (!confirm(`Delete "${getSlug()}"? This will delete BOTH versions.`))
-      return;
-    const res = await fetch(`/admin/api/post?slug=${getSlug()}`, {
-      method: "DELETE",
-    });
-    if (res.ok) window.location.href = "/admin";
-    else alert(`Error: ${(await res.json()).error}`);
-  });
-
-  document.querySelectorAll(".toggle-preview").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const textareaId = (btn as HTMLElement).dataset.textarea!;
-      const previewId = (btn as HTMLElement).dataset.preview!;
-      const preview = document.getElementById(previewId)!;
-      if (preview.classList.contains("hidden")) {
-        const { marked } = await import("marked");
-        preview.innerHTML = marked.parse(
-          (document.getElementById(textareaId) as HTMLTextAreaElement).value
-        ) as string;
-        preview.classList.remove("hidden");
-      } else {
-        preview.classList.add("hidden");
+  // Populate the zh/en tag <datalist> elements from /admin/api/tags.
+  //
+  // Failure is non-fatal — if the endpoint errors, the datalists stay empty
+  // and the tag inputs degrade to plain text fields (no dropdown suggestions
+  // but still fully usable). This matches the design: tag selection is a UX
+  // enhancement, not a required step for saving.
+  async function loadTagDatalists() {
+    try {
+      const res = await fetch("/admin/api/tags");
+      if (!res.ok) return;
+      const { data } = await res.json();
+      const zhList = document.getElementById("zh-tags-list");
+      const enList = document.getElementById("en-tags-list");
+      if (!zhList || !enList) return;
+      // Clear any existing options (from a previous page-load cycle).
+      zhList.innerHTML = "";
+      enList.innerHTML = "";
+      for (const tag of data.zh || []) {
+        const opt = document.createElement("option");
+        opt.value = tag;
+        zhList.appendChild(opt);
       }
+      for (const tag of data.en || []) {
+        const opt = document.createElement("option");
+        opt.value = tag;
+        enList.appendChild(opt);
+      }
+    } catch {
+      // Network/parse error — leave datalists empty.
+    }
+  }
+
+  function setupEditPage() {
+    // Guard: only run setup on the edit page. `astro:page-load` fires on
+    // every navigation (this script is bundled once for the whole site by
+    // the ClientRouter), so other admin pages would otherwise throw here.
+    const container = document.getElementById("editor-container");
+    if (!container) return;
+    // Avoid double-binding if setup runs twice on the same DOM (defensive).
+    // After a view transition the DOM is fresh, so this attribute won't be
+    // set on the new element and setup proceeds normally.
+    if (container.dataset.bound === "1") return;
+    container.dataset.bound = "1";
+
+    load();
+    loadTagDatalists();
+
+    document.getElementById("save-btn")!.addEventListener("click", async () => {
+      const body: Record<string, unknown> = {};
+      const zhC = (
+        document.getElementById("zh-content") as HTMLTextAreaElement
+      ).value.trim();
+      const enC = (
+        document.getElementById("en-content") as HTMLTextAreaElement
+      ).value.trim();
+      if (zhC) body.zh = { frontmatter: buildFrontmatter("zh"), content: zhC };
+      if (enC) body.en = { frontmatter: buildFrontmatter("en"), content: enC };
+
+      const msg = document.getElementById("save-msg")!;
+      msg.textContent = "Saving...";
+      const res = await fetch(`/admin/api/post?slug=${getSlug()}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      const data = await res.json();
+      msg.textContent = res.ok ? "Saved!" : `Error: ${data.error}`;
+      if (res.ok) setTimeout(() => (msg.textContent = ""), 2000);
     });
-  });
+
+    document.getElementById("delete-btn")!.addEventListener("click", async () => {
+      if (!confirm(`Delete "${getSlug()}"? This will delete BOTH versions.`))
+        return;
+      const res = await fetch(`/admin/api/post?slug=${getSlug()}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (res.ok) window.location.href = "/admin";
+      else alert(`Error: ${(await res.json()).error}`);
+    });
+
+    document.querySelectorAll(".toggle-preview").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const textareaId = (btn as HTMLElement).dataset.textarea!;
+        const previewId = (btn as HTMLElement).dataset.preview!;
+        const preview = document.getElementById(previewId)!;
+        if (preview.classList.contains("hidden")) {
+          const { marked } = await import("marked");
+          preview.innerHTML = marked.parse(
+            (document.getElementById(textareaId) as HTMLTextAreaElement).value
+          ) as string;
+          preview.classList.remove("hidden");
+        } else {
+          preview.classList.add("hidden");
+        }
+      });
+    });
+  }
+
+  // ClientRouter (View Transitions) swaps the DOM on client-side navigation
+  // but does NOT re-execute bundled <script> tags. Without listening for
+  // `astro:page-load`, the save/delete/preview handlers only attached on a
+  // full page reload — navigating from /admin to /admin/edit?slug=... via a
+  // link click left #save-btn/#delete-btn with no listener. `astro:page-load`
+  // fires both on initial load and after every swap.
+  document.addEventListener("astro:page-load", setupEditPage);
 </script>

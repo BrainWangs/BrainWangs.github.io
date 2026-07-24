@@ -96,12 +96,17 @@
   }
 
   /* ===== Code Blocks & Syntax Highlighting ===== */
+  /* Background is driven by --code-bg (defined in theme.css) so the code
+     block surface tints together with the rest of the theme. Shiki still
+     controls token colors via --shiki-light / --shiki-dark, but the block
+     background is no longer whatever min-light happened to emit — it now
+     matches the warm-grey code surface used across the theme. */
   .astro-code {
-    @apply outline-border flex border bg-(--shiki-light-bg) text-(--shiki-light) [&_span]:text-(--shiki-light);
+    @apply outline-border flex border bg-(--code-bg) text-(--shiki-light) [&_span]:text-(--shiki-light);
   }
 
   html[data-theme="dark"] .astro-code {
-    @apply bg-(--shiki-dark-bg) text-(--shiki-dark) [&_span]:text-(--shiki-dark);
+    @apply bg-(--code-bg) text-(--shiki-dark) [&_span]:text-(--shiki-dark);
   }
 
   /* Styles for Shiki transformers */

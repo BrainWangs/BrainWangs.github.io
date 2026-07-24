@@ -5,8 +5,15 @@ import {
   writePostFile,
   moveToRecycle,
 } from "../_utils/fs";
-import { parseFrontmatter } from "../_utils/frontmatter";
-import type { ApiResponse, UpdatePostInput } from "../_utils/types";
+import {
+  parseFrontmatter,
+  normalizeFrontmatterDates,
+} from "../_utils/frontmatter";
+import type { ApiResponse, UpdatePostInput, PostFrontmatter } from "../_utils/types";
+
+// Astro v7 static mode: GET runs by default, but PUT and DELETE handlers
+// are silently dropped unless this endpoint is marked server-rendered.
+export const prerender = false;
 
 function getSlug(url: URL): string {
   return url.searchParams.get("slug") || "";
@@ -63,13 +70,33 @@ export const PUT: APIRoute = async ({ url, request }) => {
         const ext = existing?.endsWith(".mdx")
           ? (".mdx" as const)
           : (".md" as const);
-        await writePostFile(
-          slug,
-          lc,
-          body[lc].frontmatter,
-          body[lc].content,
-          ext
-        );
+
+        // Merge with existing frontmatter so fields not exposed in the
+        // editor UI (author, lang, ogImage, canonicalURL, hideEditPost,
+        // timezone) are preserved instead of being wiped on save.
+        let mergedFrontmatter: PostFrontmatter;
+        if (existing) {
+          const raw = await readRawPost(existing);
+          const oldFm = parseFrontmatter(raw).frontmatter;
+          mergedFrontmatter = { ...oldFm, ...body[lc].frontmatter };
+        } else {
+          mergedFrontmatter = { ...body[lc].frontmatter };
+        }
+
+        // Keep the original pubDatetime if the editor cleared the
+        // datetime-local input (defensive — schema requires this field).
+        if (!mergedFrontmatter.pubDatetime && existing) {
+          const raw = await readRawPost(existing);
+          const oldFm = parseFrontmatter(raw).frontmatter;
+          if (oldFm.pubDatetime) mergedFrontmatter.pubDatetime = oldFm.pubDatetime;
+        }
+
+        // Always refresh modDatetime so the post sorts to the top via
+        // getSortedPosts (which sorts by modDatetime ?? pubDatetime).
+        mergedFrontmatter.modDatetime = new Date();
+
+        const safeFrontmatter = normalizeFrontmatterDates(mergedFrontmatter);
+        await writePostFile(slug, lc, safeFrontmatter, body[lc].content, ext);
       }
     }
 
